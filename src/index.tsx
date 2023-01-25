@@ -4,13 +4,14 @@ import {
   PanelSectionRow,
   ServerAPI,
   staticClasses,
+  ToggleField
 } from "decky-frontend-lib";
 import { VFC,
          useState 
         } from "react";
-import { GiMeshNetwork } from "react-icons/fa";
+import { GiMeshNetwork } from "react-icons/gi";
 
-const Content: VFC<{ serverAPI: ServerAPI }> = ({}) => {
+const Content: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
 
   const [ tailscaleEnabled, setTailscaleEnabled ] = useState(false);
   
