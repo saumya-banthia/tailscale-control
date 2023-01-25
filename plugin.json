@@ -4,7 +4,7 @@
   "flags": ["root"],
   "publish": {
     "tags": ["tailscale", "root"],
-    "description": "A Decky plugin to activate and deactivate Tailscale, while staying in Gaming mode.",
+    "description": "A Decky plugin to activate and deactivate Tailscale, while staying in Gaming mode. [Note: Tailscale needs to be installed, this works only like a switch for the same.]",
     "image": "https://i.imgur.com/sxehQEc.png"
   }
 }
