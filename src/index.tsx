@@ -4,13 +4,16 @@ import {
   PanelSectionRow,
   ServerAPI,
   staticClasses,
-  ToggleField
+  ToggleField,
+  SuspensefulImage,
 } from "decky-frontend-lib";
 import { VFC,
          useState 
         } from "react";
 import { GiMeshNetwork } from "react-icons/gi";
 import * as backend from "./backend"
+import qr from "../assets/qr.svg"
+
 
 const Content: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
   backend.setServer(serverAPI);
@@ -33,6 +36,14 @@ const Content: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
           label='Toggle Tailscale'
           description='Toggles Tailscale On or Off'
           onChange={toggleTailscale} />
+        </PanelSectionRow>
+        <PanelSectionRow>
+          <div>Tailscale Setup</div>
+          <SuspensefulImage
+          title="Tailscale Setup"
+          src={qr}
+          style={{ maxWidth: '85%' }}
+          />
         </PanelSectionRow>
     </PanelSection>
   );
