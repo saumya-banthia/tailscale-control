@@ -10,13 +10,17 @@ import { VFC,
          useState 
         } from "react";
 import { GiMeshNetwork } from "react-icons/gi";
+import * as backend from "./backend"
 
 const Content: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
+  backend.setServer(serverAPI);
 
-  const [ tailscaleEnabled, setTailscaleEnabled ] = useState(false);
+  const [ tailscaleToggle, setTailscaleToggle ] = useState(false);
+
+  backend.resolvePromise(backend.getTailscaleState(), setTailscaleToggle);
   
   const toggleTailscale = async(switchValue: boolean) => {
-    setTailscaleEnabled(switchValue);
+    setTailscaleToggle(switchValue);
     await serverAPI.callPluginMethod((switchValue) ? 'up' : 'down', {});
   }
 
@@ -25,7 +29,7 @@ const Content: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
         <PanelSectionRow>
           <ToggleField
           bottomSeparator='standard'
-          checked={tailscaleEnabled}
+          checked={tailscaleToggle}
           label='Toggle Tailscale'
           description='Toggles Tailscale On or Off'
           onChange={toggleTailscale} />
