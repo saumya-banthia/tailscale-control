@@ -6,7 +6,8 @@ logging.basicConfig(filename="/tmp/template.log",
                     filemode='w+',
                     force=True)
 logger=logging.getLogger()
-logger.setLevel(logging.INFO) # can be changed to logging.DEBUG for debugging issues
+# logger.setLevel(logging.INFO) # can be changed to logging.DEBUG for debugging issues
+logger.setLevel(logging.DEBUG) # can be changed to logging.DEBUG for debugging issues
 
 
 class Plugin:
