@@ -1,5 +1,5 @@
 {
-  "name": "Tailscale Control",
+  "name": "tailscale-control",
   "version": "0.0.3",
   "description": "A Decky plugin to activate and deactivate Tailscale, while staying in Gaming mode. [Note: Tailscale needs to be installed, this works only like a switch for the same.]",
   "scripts": {
