@@ -10,7 +10,7 @@ You will need to have Tailscale installed into your Steam Deck.
 
 This plugin is a controller for turning Tailscale on and off.
 
-A guide for the same is available here: https://gist.github.com/legowerewolf/1b1670457cfac9201ee9d67840952147
+Official install guide here: https://github.com/tailscale-dev/deck-tailscale
 
 Once you have followed the steps and installed Tailscale using the above guide, it would auto-enable Tailscale at every boot, which might not necessarily be something everyone wants. This is where this plugin comes in.
 
