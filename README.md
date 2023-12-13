@@ -21,3 +21,10 @@ There are 2 main reasons:
 * The guide created by @legowerewolf mentioned above provides a way by which your Tailscale install can persist across Steam updates.
 
 So its a win-win.
+
+### Fix needed:
+- [Compatibility with Nix Install](https://github.com/saumya-banthia/tailscale-control/issues/7)https://github.com/saumya-banthia/tailscale-control/issues/7
+
+### Features To be added:
+- [Status Check](https://github.com/saumya-banthia/tailscale-control/pull/5)https://github.com/saumya-banthia/tailscale-control/pull/5
+- [Exit node Toggle](https://github.com/saumya-banthia/tailscale-control/issues/6)https://github.com/saumya-banthia/tailscale-control/issues/6
