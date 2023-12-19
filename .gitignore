@@ -44,3 +44,9 @@ yalc.lock
 # Ignore output folder
 
 backend/out
+
+# Ignore pnpm cache
+.pnpm-store/*
+
+# Ignore deck.json, which is developer-specific and stores the sensitive sudo password
+deck.json
