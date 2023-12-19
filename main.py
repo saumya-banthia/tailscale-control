@@ -3,6 +3,8 @@ import decky_plugin
 import os
 
 os.environ['XDG_RUNTIME_DIR'] = '/run/user/1000'
+# Add the install directory used by https://github.com/tailscale-dev/deck-tailscale to the PATH
+os.environ['PATH'] += ':/opt/tailscale'
 
 
 class Plugin:
