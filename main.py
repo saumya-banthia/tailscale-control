@@ -4,6 +4,12 @@ import os
 
 os.environ['XDG_RUNTIME_DIR'] = '/run/user/1000'
 
+# Add install directories used by https://github.com/tailscale-dev/deck-tailscale
+# and Nix (https://github.com/saumya-banthia/tailscale-control/issues/7) to the PATH
+user_dirs = ['/opt/tailscale', '/home/deck/.nix-profile/bin']
+current_path = os.environ["PATH"].split(":")
+new_path = ":".join(current_path + [user_dir for user_dir in user_dirs if user_dir not in current_path])
+os.environ["PATH"] = new_path
 
 class Plugin:
     async def up(self, exit_node=False, node_ip='', allow_lan_access=False):
