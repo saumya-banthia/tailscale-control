@@ -1,8 +1,15 @@
 import subprocess
 import decky_plugin
 import os
+import re
+import logging
 
 os.environ['XDG_RUNTIME_DIR'] = '/run/user/1000'
+# Setup environment variables
+deckyHomeDir = decky_plugin.DECKY_HOME
+settingsDir = decky_plugin.DECKY_PLUGIN_SETTINGS_DIR
+loggingDir = decky_plugin.DECKY_PLUGIN_LOG_DIR
+logger = decky_plugin.logger
 
 # Add install directories used by https://github.com/tailscale-dev/deck-tailscale
 # and Nix (https://github.com/saumya-banthia/tailscale-control/issues/7) to the PATH
@@ -10,9 +17,13 @@ user_dirs = ['/opt/tailscale', '/home/deck/.nix-profile/bin']
 current_path = os.environ["PATH"].split(":")
 new_path = ":".join(current_path + [user_dir for user_dir in user_dirs if user_dir not in current_path])
 os.environ["PATH"] = new_path
+# Setup backend logger
+logger.setLevel(logging.DEBUG) # can be changed to logging.DEBUG for debugging issues
+logger.info('[backend] Settings path: {}'.format(settingsDir))
 
 class Plugin:
-    async def up(self, exit_node=False, node_ip='', allow_lan_access=False):
+
+    async def up(self, exit_node=False, node_ip='', allow_lan_access=True):
         """
         Bring up the Tailscale connection.
 
@@ -25,15 +36,16 @@ class Plugin:
             bool: True if the Tailscale connection is successfully brought up, False otherwise.
         """
         try:
+            exit_node = bool(exit_node)
+            allow_lan_access = bool(allow_lan_access)
             cmd_list = ["tailscale", "up"]
-            if exit_node and node_ip is not '':
-                cmd_list.append(f"--exit-node={node_ip}")
-                if allow_lan_access:
-                    cmd_list.append("--exit-node-allow-lan-access=true")
-            subprocess.run(cmd_list, timeout=10, check=False)
-            return True
+            cmd_list.append(f"--exit-node={node_ip}") if (exit_node) or (not exit_node and node_ip is '') else None
+            cmd_list.append("--exit-node-allow-lan-access=true") if node_ip != '' and allow_lan_access else None
+            cmd_list.append("--reset")
+            cmd_list.append("--operator=deck")
+            return not subprocess.run(cmd_list, timeout=10, check=False)
         except Exception as e:
-            decky_plugin.logger.error(e, "error")
+            logger.error(e, "error")
 
     async def down(self):
         """
@@ -46,7 +58,7 @@ class Plugin:
             subprocess.run(["tailscale", "down"], timeout=10, check=False)
             return True
         except Exception as e:
-            decky_plugin.logger.error(e, "error")
+            logger.error(e, "error")
 
     async def get_tailscale_state(self):
         """
@@ -59,7 +71,24 @@ class Plugin:
             result = not subprocess.call(["tailscale", "status"], timeout=10)
             return result
         except Exception as e:
-            decky_plugin.logger.error(e, "error")
+            logger.error(e, "error")
+
+    async def get_tailscale_exit_node_ip_list(self):
+        """
+        Get the exit node of the Tailscale connection.
+
+        Returns:
+            str: The IP address of the exit node.
+        """
+        try:
+            output = subprocess.check_output(["tailscale", "status"], timeout=10, text=True)
+            lines = [elem for elem in output.splitlines() if len(elem) != 0]
+            ip_pattern = r"\b(?:\d{1,3}\.){3}\d{1,3}\b"
+            # over-engineered regex to avoid matching "exit node" in the middle of a line
+            node_pattern = ip_pattern + r".*(-|offline|online|active|idle).*exit node"
+            return [re.findall(ip_pattern, ip)[0] for ip in lines if re.search(node_pattern, ip)]
+        except Exception as e:
+            logger.error(e, "error")
 
     async def get_tailscale_device_status(self):
         """
@@ -86,8 +115,8 @@ class Plugin:
                 output_dict["name"].append(parts[1])
                 # output_dict["type"].append(parts[3])
                 output_dict["status"].append(parts[4].replace(";", ""))
-            decky_plugin.logger.debug(output)
-            decky_plugin.logger.debug(output_dict)
+            logger.debug(output)
+            logger.debug(output_dict)
             return output_dict
         except Exception as e:
-            decky_plugin.logger.error(e, "error")
+            logger.error(e, "error")
