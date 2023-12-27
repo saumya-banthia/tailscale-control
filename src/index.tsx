@@ -79,16 +79,18 @@ const Content: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
     const data = await serverAPI.callPluginMethod("get_tailscale_exit_node_ip_list", {});
     if (data.success) {
       var exitNodeIPList = Array(data.result);
-      var exitNodeIPListOptions = tailscaleExitNodeIPList;
+      var exitNodeIPListOptions: DropdownOption[] = [{ data: 0, label: "Unset" }];
       // use map to populate the dropdown list
       exitNodeIPList.map((ip, _) => {
-        if (tailscaleExitNodeIPList.find((o) => String(o.label) == String(ip)) || ip === null) {
+        if (exitNodeIPListOptions.find((o) => String(o.label) == String(ip)) || ip === null || String(ip) === '') {
           console.log("IP already exists in list: " + ip);
         } else {
           // append to the end of the list
           exitNodeIPListOptions.push({ data: exitNodeIPListOptions.length, label: String(ip) });
         }
       });
+      console.log("Exit Node IP List: ");
+      console.log(exitNodeIPListOptions);
       togglerAndSetter(setTailscaleExitNodeIPList, LOCAL_STORAGE_KEY_TAILSCALE_EXIT_NODE_LIST, exitNodeIPListOptions);
       togglerAndSetter(setTailscaleNodeIPListDisabled, LOCAL_STORAGE_KEY_TAILSCALE_EXIT_NODE_LIST_DISABLED, false)
       var toggleState = localStorage.getItem(LOCAL_STORAGE_KEY_TAILSCALE_TOGGLE);
@@ -149,7 +151,7 @@ const Content: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
     tailscaleUp("LAN Access toggled: "+ switchValue);
   }
 
-  const setNodeIP = async(ip: SingleDropdownOption) => {
+  const setNodeIP = async(ip: DropdownOption) => {
     togglerAndSetter(setTailscaleNodeIP, LOCAL_STORAGE_KEY_TAILSCALE_NODE_IP, ip.label==="Unset"? '' : ip.label);
     tailscaleUp("Exit Node IP set to: "+ ip.label);
   }
