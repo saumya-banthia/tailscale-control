@@ -8,6 +8,7 @@ import {
   SuspensefulImage,
   DropdownItem,
   DropdownOption,
+  Field,
 } from "decky-frontend-lib";
 import { VFC,
          useState,
@@ -31,21 +32,9 @@ const Content: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
   const [ tailscaleExitNodeIPListDisabled, setTailscaleNodeIPListDisabled ] = useState<boolean>(getInitialState(LOCAL_STORAGE_KEY_TAILSCALE_EXIT_NODE_LIST_DISABLED, true));
   const [ tailscaleNodeIP, setTailscaleNodeIP ] = useState<string>(getInitialState(LOCAL_STORAGE_KEY_TAILSCALE_NODE_IP, ''));
   const [ tailscaleAllowLAN, setTailscaleAllowLAN ] = useState<boolean>(getInitialState(LOCAL_STORAGE_KEY_TAILSCALE_ALLOW_LAN, true));
-  const [ deviceStatus, setDeviceStatus ] = useState<JSX.Element>(
   // TODO: when you have time, see if this can be replaced with ReorderableList
   // https://wiki.deckbrew.xyz/en/api-docs/decky-frontend-lib/custom/components/ReorderableList
-  <div>
-    <span>Device Status</span>
-      <table>
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-        </table>
-  </div>
-  );
+  const [ deviceStatus, setDeviceStatus ] = useState<JSX.Element>(<div>Offline</div>);
 
   function getInitialState(key: string, defaultState:any = 0, paramString:string = 'value') {
     const settingsString = localStorage.getItem(key);
@@ -172,7 +161,6 @@ const Content: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
         // TODO: when you have time, see if this can be replaced with ReorderableList
         // https://wiki.deckbrew.xyz/en/api-docs/decky-frontend-lib/custom/components/ReorderableList
         <div>
-          <span>Device Status</span>
           <table>
             <thead>
               <tr>
@@ -256,18 +244,20 @@ const Content: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
           description='WARNING: Disabling LAN access, may cause your SSH to become inaccessible (this can be reversed through Desktop Mode)'
           disabled={tailscaleExitNode && !tailscaleExitNodeIPListDisabled ? false : true}
           onChange={toggleLANAccess} />
-        </PanelSectionRow>
-        <PanelSectionRow>
-        {/* Show Device Status */}
-          {deviceStatus}
-        </PanelSectionRow>
-        <PanelSectionRow>
-          <div>Tailscale Setup</div>
-          <SuspensefulImage
-          title="Tailscale Setup"
-          src={qr}
-          style={{ maxWidth: '85%' }}
-          />
+          <Field 
+          focusable={true}
+          bottomSeparator='standard'
+          label="Device Status">
+            {deviceStatus}
+          </Field>
+          <Field
+          focusable={true}
+          bottomSeparator='none'
+          label={"Tailscale Setup"}>
+            <SuspensefulImage
+            src={qr}
+            style={{ maxWidth: '85%', padding: '7.5%' }}/>
+          </Field>
         </PanelSectionRow>
     </PanelSection>
   );
