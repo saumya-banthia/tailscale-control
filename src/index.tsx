@@ -7,7 +7,6 @@ import {
   ToggleField,
   SuspensefulImage,
   DropdownItem,
-  SingleDropdownOption,
   DropdownOption,
 } from "decky-frontend-lib";
 import { VFC,
@@ -78,7 +77,7 @@ const Content: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
   const getExitNodeIPList = async () => {
     const data = await serverAPI.callPluginMethod("get_tailscale_exit_node_ip_list", {});
     if (data.success) {
-      var exitNodeIPList = Array(data.result);
+      var exitNodeIPList = data.result as string[];
       var exitNodeIPListOptions: DropdownOption[] = [{ data: 0, label: "Unset" }];
       // use map to populate the dropdown list
       exitNodeIPList.map((ip, _) => {

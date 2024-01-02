@@ -1,6 +1,6 @@
 {
   "name": "tailscale-control",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "description": "A Decky plugin to activate and deactivate Tailscale, while staying in Gaming mode. [Note: Tailscale needs to be installed, this works only like a switch for the same.]",
   "scripts": {
     "build": "shx rm -rf dist && rollup -c",
