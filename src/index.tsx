@@ -246,10 +246,10 @@ const Content: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
           onChange={toggleLANAccess} />
           <Field 
           focusable={true}
-          bottomSeparator='standard'
-          label="Device Status">
-            {deviceStatus}
-          </Field>
+          bottomSeparator='none'
+          label="Device Status"/>
+          {deviceStatus}
+          <Field bottomSeparator='standard'/>
           <Field
           focusable={true}
           bottomSeparator='none'
