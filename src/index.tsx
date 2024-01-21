@@ -163,6 +163,10 @@ const Content: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
   }
 
   const setLoginServer = async(url: string) => {
+    if (url == tailscaleLoginServer) {
+      return;
+    }
+
     togglerAndSetter(setTailscaleLoginServer, LOCAL_STORAGE_KEY_TAILSCALE_LOGIN_SERVER, url?.includes("://") ? url : DEFAULT_TAILSCALE_LOGIN_SERVER);
     if (tailscaleToggleState) {
       console.log("Restart Tailscal: login server change")
