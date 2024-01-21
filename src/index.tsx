@@ -168,11 +168,14 @@ const Content: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
     }
 
     togglerAndSetter(setTailscaleLoginServer, LOCAL_STORAGE_KEY_TAILSCALE_LOGIN_SERVER, url?.includes("://") ? url : DEFAULT_TAILSCALE_LOGIN_SERVER);
-    if (tailscaleToggleState) {
-      console.log("Restart Tailscal: login server change")
-      await callPluginMethod('down');
-      await tailscaleUp("Change login server toggled: "+ url);
+  }
+
+  const setOperator = async(user: string) => {
+    if (user == tailscaleOperator) {
+      return;
     }
+
+    togglerAndSetter(setTailscaleOperator, LOCAL_STORAGE_KEY_TAILSCALE_OPERATOR, user != '' ? user : DEFAULT_TAILSCALE_OPERATOR);
   }
 
   const getTailscaleState = async () => {
@@ -215,20 +218,37 @@ const Content: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
     }
   }
 
-  const popupLoginServerInput = () => {
-
+  const popupMiscSetting = () => {
     let closePopup = () => {};
     let Popup = () => { 
       const [url, setUrl] = useState<string>(tailscaleLoginServer);
+      const [op, setOp] = useState<string>(tailscaleOperator);
 
-      return <ConfirmModal closeModal={closePopup} strTitle="Set Login Server"  onOK={() => setLoginServer(url)}>
-              <p>Will restart Tailscale if it is running</p>
-              <p>Note: if you are running headscale and this is the first time login, please go desktop to login (for the sake of login token)</p>
-              <TextField 
-                id="TailscaleLoginServerInput" 
-                value={url} 
-                onChange={(event) => setUrl(event.target.value)} />
-            </ConfirmModal>
+      return <ConfirmModal closeModal={closePopup} strTitle="Misc Settings"  
+        onOK={() => {
+          setLoginServer(url)
+          setOperator(op)
+
+          if (tailscaleToggleState) {
+            console.log("Restart Tailscal: login server change")
+            callPluginMethod('down');
+            tailscaleUp("Change login server toggled: "+ url);
+          }
+        }}>
+            <p>Will restart Tailscale if it is running</p>
+            <TextField 
+              id="TailscaleLoginServerInput" 
+              label="Tailscale Login Server"
+              description="if you are running headscale and this is the first time login, please go desktop to login (for the sake of login token)"
+              value={url} 
+              onChange={(event) => setUrl(event.target.value)} />
+            <TextField 
+              label="Tailscale Operator"
+              description="run tailscale as user set below"
+              id="TailscaleOperatorInput" 
+              value={op} 
+              onChange={(event) => setOp(event.target.value)} />
+          </ConfirmModal>
     };
 
     const modal = showModal(<Popup />, window)
@@ -271,10 +291,10 @@ const Content: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
           />
           <ButtonItem
             layout="below"
-            onClick={popupLoginServerInput}
+            onClick={popupMiscSetting}
             bottomSeparator='standard'
           >
-            Set login server
+            Tailscale up settings
           </ButtonItem>
           <DropdownItem
           bottomSeparator='none'
