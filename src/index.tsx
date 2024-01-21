@@ -114,16 +114,19 @@ const Content: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
       var node_ip_getter = localStorage.getItem(LOCAL_STORAGE_KEY_TAILSCALE_NODE_IP);
       var allow_lan_access_getter = localStorage.getItem(LOCAL_STORAGE_KEY_TAILSCALE_ALLOW_LAN);
       var login_server_getter = localStorage.getItem(LOCAL_STORAGE_KEY_TAILSCALE_LOGIN_SERVER);
+      var operator_getter = localStorage.getItem(LOCAL_STORAGE_KEY_TAILSCALE_OPERATOR);
       var exit_node = exit_node_getter? JSON.parse(exit_node_getter).value : false;
       var node_ip = node_ip_getter? JSON.parse(node_ip_getter).value : '';
       var login_server = login_server_getter? JSON.parse(login_server_getter).value : '';
+      var operator = operator_getter? JSON.parse(operator_getter).value : '';
       var allow_lan_access = allow_lan_access_getter? JSON.parse(allow_lan_access_getter).value : true;
       const data = await serverAPI.callPluginMethod<{
         exit_node: boolean, 
         node_ip: string, 
         allow_lan_access: boolean,
         login_server: string,
-      }, boolean>('up', {exit_node, node_ip, allow_lan_access, login_server});
+        operator: string,
+      }, boolean>('up', {exit_node, node_ip, allow_lan_access, login_server, operator});
       if (data.success) {
         console.log("Toggle up state: " + data.result + " with login server " + login_server);
         getExitNodeIPList();
