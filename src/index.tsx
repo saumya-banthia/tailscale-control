@@ -9,6 +9,10 @@ import {
   DropdownItem,
   DropdownOption,
   Field,
+  TextField,
+  ConfirmModal,
+  ButtonItem,
+  showModal,
 } from "decky-frontend-lib";
 import { VFC,
          useState,
@@ -148,6 +152,15 @@ const Content: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
     tailscaleUp("Exit Node IP set to: "+ ip.label);
   }
 
+  const setLoginServer = async(url: string) => {
+    togglerAndSetter(setTailscaleLoginServer, LOCAL_STORAGE_KEY_TAILSCALE_LOGIN_SERVER, url?.includes("://") ? url : DEFAULT_TAILSCALE_LOGIN_SERVER);
+    if (tailscaleToggleState) {
+      console.log("Restart Tailscal: login server change")
+      await callPluginMethod('down');
+      await tailscaleUp("Change login server toggled: "+ url);
+    }
+  }
+
   const getTailscaleState = async () => {
     const data = await serverAPI.callPluginMethod("get_tailscale_state", {});
     if (data.success) {
@@ -188,6 +201,26 @@ const Content: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
     }
   }
 
+  const popupLoginServerInput = () => {
+
+    let closePopup = () => {};
+    let Popup = () => { 
+      const [url, setUrl] = useState<string>(tailscaleLoginServer);
+
+      return <ConfirmModal closeModal={closePopup} strTitle="Set Login Server"  onOK={() => setLoginServer(url)}>
+              <p>Will restart Tailscale if it is running</p>
+              <p>Note: if you are running headscale and this is the first time login, please go desktop to login (for the sake of login token)</p>
+              <TextField 
+                id="TailscaleLoginServerInput" 
+                value={url} 
+                onChange={(event) => setUrl(event.target.value)} />
+            </ConfirmModal>
+    };
+
+    const modal = showModal(<Popup />, window)
+    closePopup = modal.Close;
+  }
+
   // set up the initial state
   useEffect(() => {
     console.log('mounted');
@@ -216,11 +249,19 @@ const Content: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
     <PanelSection title="Settings">
         <PanelSectionRow>
           <ToggleField
-          bottomSeparator='standard'
+          bottomSeparator='none'
           checked={tailscaleToggleState}
           label='Toggle Tailscale'
           description='Toggles Tailscale On or Off'
-          onChange={toggleTailscale} />
+          onChange={toggleTailscale} 
+          />
+          <ButtonItem
+            layout="below"
+            onClick={popupLoginServerInput}
+            bottomSeparator='standard'
+          >
+            Set login server
+          </ButtonItem>
           <DropdownItem
           bottomSeparator='none'
           onMenuOpened={() => getExitNodeIPList()}
