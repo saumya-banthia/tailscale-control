@@ -23,7 +23,7 @@ logger.info('[backend] Settings path: {}'.format(settingsDir))
 
 class Plugin:
 
-    async def up(self, exit_node=False, node_ip='', allow_lan_access=True):
+    async def up(self, exit_node=False, node_ip='', allow_lan_access=True, login_server='https://controlplane.tailscale.com'):
         """
         Bring up the Tailscale connection.
 
@@ -31,7 +31,7 @@ class Plugin:
             exit_node (bool): Whether to use an exit node.
             node_ip (str): The IP address of the exit node.
             allow_lan_access (bool): Whether to allow LAN access.
-
+            login_server (str): Tailscale login server url
         Returns:
             bool: True if the Tailscale connection is successfully brought up, False otherwise.
         """
@@ -42,6 +42,7 @@ class Plugin:
             cmd_list.append(f"--exit-node={node_ip}") if (exit_node) or (not exit_node and node_ip is '') else None
             cmd_list.append("--exit-node-allow-lan-access=true") if node_ip != '' and allow_lan_access else None
             cmd_list.append("--reset")
+            cmd_list.append(f"--login-server={login_server}")
             cmd_list.append("--operator=deck")
             return not subprocess.run(cmd_list, timeout=10, check=False)
         except Exception as e:
