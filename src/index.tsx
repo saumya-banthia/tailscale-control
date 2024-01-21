@@ -190,6 +190,10 @@ const Content: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
   }
 
   const getDeviceStatus = async () => {
+    if (!tailscaleToggleState) {
+      return;
+    }
+
     const data = await serverAPI.callPluginMethod("get_tailscale_device_status", {});
     if (data.success) {
       const deviceKeys = Object.keys(data.result);
