@@ -22,6 +22,7 @@ import { GiMeshNetwork } from "react-icons/gi";
 import qr from "../assets/qr.svg"
 
 const DEFAULT_TAILSCALE_LOGIN_SERVER = "https://controlplane.tailscale.com"
+const DEFAULT_TAILSCALE_UP_FLAGS = "--operator=deck"
 
 const LOCAL_STORAGE_KEY_TAILSCALE_TOGGLE = 'tailscaleToggle';
 const LOCAL_STORAGE_KEY_TAILSCALE_EXIT_NODE = 'tailscaleExitNode';
@@ -40,7 +41,7 @@ const Content: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
   const [ tailscaleExitNodeIPListDisabled, setTailscaleNodeIPListDisabled ] = useState<boolean>(getInitialState(LOCAL_STORAGE_KEY_TAILSCALE_EXIT_NODE_LIST_DISABLED, true));
   const [ tailscaleNodeIP, setTailscaleNodeIP ] = useState<string>(getInitialState(LOCAL_STORAGE_KEY_TAILSCALE_NODE_IP, ''));
   const [ tailscaleLoginServer, setTailscaleLoginServer ] = useState<string>(getInitialState(LOCAL_STORAGE_KEY_TAILSCALE_LOGIN_SERVER, DEFAULT_TAILSCALE_LOGIN_SERVER));
-  const [ tailscaleCustomUpFlag, setTailscaleCustomUpFlag ] = useState<string>(getInitialState(LOCAL_STORAGE_KEY_TAILSCALE_CUSTOM_UP_FLAG, ''));
+  const [ tailscaleCustomUpFlag, setTailscaleCustomUpFlag ] = useState<string>(getInitialState(LOCAL_STORAGE_KEY_TAILSCALE_CUSTOM_UP_FLAG, DEFAULT_TAILSCALE_UP_FLAGS));
   const [ tailscaleAllowLAN, setTailscaleAllowLAN ] = useState<boolean>(getInitialState(LOCAL_STORAGE_KEY_TAILSCALE_ALLOW_LAN, true));
   // TODO: when you have time, see if this can be replaced with ReorderableList
   // https://wiki.deckbrew.xyz/en/api-docs/decky-frontend-lib/custom/components/ReorderableList
@@ -249,7 +250,7 @@ const Content: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
             <TextField 
               id="TailscaleCustomUpFlagInput" 
               label="Tailscale Custom Up Flags"
-              description="Add following flags to tailscale up command."
+              description="Remember checking your --operator and the default for steamos is [deck]. If you want to leave this blank, type [DISABLED]."
               value={customUpFlag} 
               onChange={(event) => setCustomUpFlag(event.target.value)} />
           </ConfirmModal>

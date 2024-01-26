@@ -44,7 +44,11 @@ class Plugin:
             cmd_list.append("--exit-node-allow-lan-access=true") if node_ip != '' and allow_lan_access else None
             cmd_list.append("--reset")
             cmd_list.append(f"--login-server={login_server}")
-            cmd_list += custom_flags.split(" ")
+
+            # in case somebody does not want to apply the default value
+            if custom_flags != "DISABLED":
+                cmd_list += custom_flags.split(" ")
+            
             logger.debug("Tailscale up with command: " + " ".join(cmd_list))
             
             return not subprocess.run(cmd_list, timeout=10, check=False)
