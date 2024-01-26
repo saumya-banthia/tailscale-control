@@ -226,15 +226,17 @@ const Content: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
     let closePopup = () => {};
     let Popup = () => { 
       const [url, setUrl] = useState<string>(tailscaleLoginServer);
+      const [customUpFlag, setCustomUpFlag] = useState<string>(tailscaleCustomUpFlag);
 
       return <ConfirmModal closeModal={closePopup} strTitle="Misc Settings"  
         onOK={() => {
           setLoginServer(url)
+          togglerAndSetter(setTailscaleCustomUpFlag, LOCAL_STORAGE_KEY_TAILSCALE_CUSTOM_UP_FLAG, customUpFlag);
 
           if (tailscaleToggleState) {
-            console.log("Restart Tailscal: login server change")
+            console.log("Restart Tailscal: up config change")
             callPluginMethod('down');
-            tailscaleUp("Change login server toggled: "+ url);
+            tailscaleUp("Restart with flag: --login-server="+ url + " " + customUpFlag);
           }
         }}>
             <p>Will restart Tailscale if it is running</p>
@@ -244,6 +246,12 @@ const Content: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
               description="if you are running headscale and this is the first time login, please go desktop to login (for the sake of login token)"
               value={url} 
               onChange={(event) => setUrl(event.target.value)} />
+            <TextField 
+              id="TailscaleCustomUpFlagInput" 
+              label="Tailscale Custom Up Flags"
+              description="Add following flags to tailscale up command."
+              value={customUpFlag} 
+              onChange={(event) => setCustomUpFlag(event.target.value)} />
           </ConfirmModal>
     };
 
