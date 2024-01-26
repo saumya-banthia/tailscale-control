@@ -68,7 +68,7 @@ class Plugin:
             bool: True if the Tailscale connection is active, False otherwise.
         """
         try:
-            result = not subprocess.call(["tailscale", "status"], timeout=10)
+            result = not subprocess.call(["tailscale", "status"], timeout=10, stdout=subprocess.DEVNULL)
             return result
         except Exception as e:
             logger.error(e, "error")
