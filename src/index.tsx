@@ -298,8 +298,7 @@ const Content: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
           checked={tailscaleToggleState}
           label='Toggle Tailscale'
           description='Toggles Tailscale On or Off'
-          onChange={toggleTailscale} 
-          />
+          onChange={toggleTailscale} />
           <ButtonItem
             layout="below"
             onClick={popupMiscSetting}
