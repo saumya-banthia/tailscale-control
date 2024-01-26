@@ -29,6 +29,7 @@ const LOCAL_STORAGE_KEY_TAILSCALE_NODE_IP = 'tailscaleNodeIP';
 const LOCAL_STORAGE_KEY_TAILSCALE_ALLOW_LAN = 'tailscaleAllowLAN';
 const LOCAL_STORAGE_KEY_TAILSCALE_EXIT_NODE_LIST = 'tailscaleExitNodeList';
 const LOCAL_STORAGE_KEY_TAILSCALE_LOGIN_SERVER = 'tailscaleLoginServer';
+const LOCAL_STORAGE_KEY_TAILSCALE_CUSTOM_UP_FLAG = 'tailscaleCustomUpFlag';
 const LOCAL_STORAGE_KEY_TAILSCALE_EXIT_NODE_LIST_DISABLED = 'tailscaleExitNodeListDisabled';
 
 const Content: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
@@ -39,6 +40,7 @@ const Content: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
   const [ tailscaleExitNodeIPListDisabled, setTailscaleNodeIPListDisabled ] = useState<boolean>(getInitialState(LOCAL_STORAGE_KEY_TAILSCALE_EXIT_NODE_LIST_DISABLED, true));
   const [ tailscaleNodeIP, setTailscaleNodeIP ] = useState<string>(getInitialState(LOCAL_STORAGE_KEY_TAILSCALE_NODE_IP, ''));
   const [ tailscaleLoginServer, setTailscaleLoginServer ] = useState<string>(getInitialState(LOCAL_STORAGE_KEY_TAILSCALE_LOGIN_SERVER, DEFAULT_TAILSCALE_LOGIN_SERVER));
+  const [ tailscaleCustomUpFlag, setTailscaleCustomUpFlag ] = useState<string>(getInitialState(LOCAL_STORAGE_KEY_TAILSCALE_CUSTOM_UP_FLAG, ''));
   const [ tailscaleAllowLAN, setTailscaleAllowLAN ] = useState<boolean>(getInitialState(LOCAL_STORAGE_KEY_TAILSCALE_ALLOW_LAN, true));
   // TODO: when you have time, see if this can be replaced with ReorderableList
   // https://wiki.deckbrew.xyz/en/api-docs/decky-frontend-lib/custom/components/ReorderableList
@@ -111,16 +113,25 @@ const Content: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
       var node_ip_getter = localStorage.getItem(LOCAL_STORAGE_KEY_TAILSCALE_NODE_IP);
       var allow_lan_access_getter = localStorage.getItem(LOCAL_STORAGE_KEY_TAILSCALE_ALLOW_LAN);
       var login_server_getter = localStorage.getItem(LOCAL_STORAGE_KEY_TAILSCALE_LOGIN_SERVER);
+      var custom_up_flag_getter = localStorage.getItem(LOCAL_STORAGE_KEY_TAILSCALE_CUSTOM_UP_FLAG);
       var exit_node = exit_node_getter? JSON.parse(exit_node_getter).value : false;
       var node_ip = node_ip_getter? JSON.parse(node_ip_getter).value : '';
       var login_server = login_server_getter? JSON.parse(login_server_getter).value : '';
+      var custom_up_flag = custom_up_flag_getter? JSON.parse(custom_up_flag_getter).value : '';
       var allow_lan_access = allow_lan_access_getter? JSON.parse(allow_lan_access_getter).value : true;
       const data = await serverAPI.callPluginMethod<{
         exit_node: boolean, 
         node_ip: string, 
         allow_lan_access: boolean,
+        custom_flags: string,
         login_server: string,
-      }, boolean>('up', {exit_node, node_ip, allow_lan_access, login_server});
+      }, boolean>('up', {
+        exit_node, 
+        node_ip, 
+        allow_lan_access, 
+        custom_flags: custom_up_flag, 
+        login_server
+      });
       if (data.success) {
         console.log("Toggle up state: " + data.result + " with login server " + login_server);
         getExitNodeIPList();
