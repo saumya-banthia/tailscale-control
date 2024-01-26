@@ -188,7 +188,13 @@ const Content: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
   }
 
   const getDeviceStatus = async () => {
-    if (!tailscaleToggleState) {
+    // Use tailscaleToggleState directly is not reliable 
+    // and I don't think call getTailscaleState here is a good idea 
+    // because we already call it in the setInterval cycle
+    var toggle_state_getter = localStorage.getItem(LOCAL_STORAGE_KEY_TAILSCALE_TOGGLE);
+    var is_toggled = toggle_state_getter ? JSON.parse(toggle_state_getter).value : false;
+
+    if (!is_toggled) {
       return;
     }
 
