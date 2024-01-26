@@ -22,7 +22,6 @@ import { GiMeshNetwork } from "react-icons/gi";
 import qr from "../assets/qr.svg"
 
 const DEFAULT_TAILSCALE_LOGIN_SERVER = "https://controlplane.tailscale.com"
-const DEFAULT_TAILSCALE_OPERATOR = "deck"
 
 const LOCAL_STORAGE_KEY_TAILSCALE_TOGGLE = 'tailscaleToggle';
 const LOCAL_STORAGE_KEY_TAILSCALE_EXIT_NODE = 'tailscaleExitNode';
@@ -30,7 +29,6 @@ const LOCAL_STORAGE_KEY_TAILSCALE_NODE_IP = 'tailscaleNodeIP';
 const LOCAL_STORAGE_KEY_TAILSCALE_ALLOW_LAN = 'tailscaleAllowLAN';
 const LOCAL_STORAGE_KEY_TAILSCALE_EXIT_NODE_LIST = 'tailscaleExitNodeList';
 const LOCAL_STORAGE_KEY_TAILSCALE_LOGIN_SERVER = 'tailscaleLoginServer';
-const LOCAL_STORAGE_KEY_TAILSCALE_OPERATOR = 'tailscaleOperator';
 const LOCAL_STORAGE_KEY_TAILSCALE_EXIT_NODE_LIST_DISABLED = 'tailscaleExitNodeListDisabled';
 
 const Content: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
@@ -41,7 +39,6 @@ const Content: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
   const [ tailscaleExitNodeIPListDisabled, setTailscaleNodeIPListDisabled ] = useState<boolean>(getInitialState(LOCAL_STORAGE_KEY_TAILSCALE_EXIT_NODE_LIST_DISABLED, true));
   const [ tailscaleNodeIP, setTailscaleNodeIP ] = useState<string>(getInitialState(LOCAL_STORAGE_KEY_TAILSCALE_NODE_IP, ''));
   const [ tailscaleLoginServer, setTailscaleLoginServer ] = useState<string>(getInitialState(LOCAL_STORAGE_KEY_TAILSCALE_LOGIN_SERVER, DEFAULT_TAILSCALE_LOGIN_SERVER));
-  const [ tailscaleOperator, setTailscaleOperator ] = useState<string>(getInitialState(LOCAL_STORAGE_KEY_TAILSCALE_OPERATOR, DEFAULT_TAILSCALE_OPERATOR));
   const [ tailscaleAllowLAN, setTailscaleAllowLAN ] = useState<boolean>(getInitialState(LOCAL_STORAGE_KEY_TAILSCALE_ALLOW_LAN, true));
   // TODO: when you have time, see if this can be replaced with ReorderableList
   // https://wiki.deckbrew.xyz/en/api-docs/decky-frontend-lib/custom/components/ReorderableList
@@ -114,19 +111,16 @@ const Content: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
       var node_ip_getter = localStorage.getItem(LOCAL_STORAGE_KEY_TAILSCALE_NODE_IP);
       var allow_lan_access_getter = localStorage.getItem(LOCAL_STORAGE_KEY_TAILSCALE_ALLOW_LAN);
       var login_server_getter = localStorage.getItem(LOCAL_STORAGE_KEY_TAILSCALE_LOGIN_SERVER);
-      var operator_getter = localStorage.getItem(LOCAL_STORAGE_KEY_TAILSCALE_OPERATOR);
       var exit_node = exit_node_getter? JSON.parse(exit_node_getter).value : false;
       var node_ip = node_ip_getter? JSON.parse(node_ip_getter).value : '';
       var login_server = login_server_getter? JSON.parse(login_server_getter).value : '';
-      var operator = operator_getter? JSON.parse(operator_getter).value : '';
       var allow_lan_access = allow_lan_access_getter? JSON.parse(allow_lan_access_getter).value : true;
       const data = await serverAPI.callPluginMethod<{
         exit_node: boolean, 
         node_ip: string, 
         allow_lan_access: boolean,
         login_server: string,
-        operator: string,
-      }, boolean>('up', {exit_node, node_ip, allow_lan_access, login_server, operator});
+      }, boolean>('up', {exit_node, node_ip, allow_lan_access, login_server});
       if (data.success) {
         console.log("Toggle up state: " + data.result + " with login server " + login_server);
         getExitNodeIPList();
@@ -171,14 +165,6 @@ const Content: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
     }
 
     togglerAndSetter(setTailscaleLoginServer, LOCAL_STORAGE_KEY_TAILSCALE_LOGIN_SERVER, url?.includes("://") ? url : DEFAULT_TAILSCALE_LOGIN_SERVER);
-  }
-
-  const setOperator = async(user: string) => {
-    if (user == tailscaleOperator) {
-      return;
-    }
-
-    togglerAndSetter(setTailscaleOperator, LOCAL_STORAGE_KEY_TAILSCALE_OPERATOR, user != '' ? user : DEFAULT_TAILSCALE_OPERATOR);
   }
 
   const getTailscaleState = async () => {
@@ -229,12 +215,10 @@ const Content: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
     let closePopup = () => {};
     let Popup = () => { 
       const [url, setUrl] = useState<string>(tailscaleLoginServer);
-      const [op, setOp] = useState<string>(tailscaleOperator);
 
       return <ConfirmModal closeModal={closePopup} strTitle="Misc Settings"  
         onOK={() => {
           setLoginServer(url)
-          setOperator(op)
 
           if (tailscaleToggleState) {
             console.log("Restart Tailscal: login server change")
@@ -249,12 +233,6 @@ const Content: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
               description="if you are running headscale and this is the first time login, please go desktop to login (for the sake of login token)"
               value={url} 
               onChange={(event) => setUrl(event.target.value)} />
-            <TextField 
-              label="Tailscale Operator"
-              description="run tailscale as user set below"
-              id="TailscaleOperatorInput" 
-              value={op} 
-              onChange={(event) => setOp(event.target.value)} />
           </ConfirmModal>
     };
 
