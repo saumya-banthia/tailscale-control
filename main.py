@@ -32,6 +32,7 @@ class Plugin:
             node_ip (str): The IP address of the exit node.
             allow_lan_access (bool): Whether to allow LAN access.
             login_server (str): Tailscale login server url
+            custom_flags (str): User defined flags
         Returns:
             bool: True if the Tailscale connection is successfully brought up, False otherwise.
         """
