@@ -188,16 +188,6 @@ const Content: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
   }
 
   const getDeviceStatus = async () => {
-    // Use tailscaleToggleState directly is not reliable 
-    // and I don't think call getTailscaleState here is a good idea 
-    // because we already call it in the setInterval cycle
-    var toggle_state_getter = localStorage.getItem(LOCAL_STORAGE_KEY_TAILSCALE_TOGGLE);
-    var is_toggled = toggle_state_getter ? JSON.parse(toggle_state_getter).value : false;
-
-    if (!is_toggled) {
-      return;
-    }
-
     const data = await serverAPI.callPluginMethod("get_tailscale_device_status", {});
     if (data.success) {
       const deviceKeys = Object.keys(data.result);
@@ -281,10 +271,14 @@ const Content: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
     exit_node_list_disabled_getter? JSON.parse(exit_node_list_disabled_getter).value : true;
     const interval = setInterval(() => {
       getTailscaleState();
-      getDeviceStatus();
+
       var tailscaleState = localStorage.getItem(LOCAL_STORAGE_KEY_TAILSCALE_TOGGLE);
       if (tailscaleState) {
-        JSON.parse(tailscaleState).value ? setTailscaleNodeIPListDisabled(false) : setTailscaleNodeIPListDisabled(true);
+        var is_ts_up = JSON.parse(tailscaleState).value 
+
+        // get device list only when tailscale is up
+        is_ts_up ? getDeviceStatus() : false;
+        is_ts_up ? setTailscaleNodeIPListDisabled(false) : setTailscaleNodeIPListDisabled(true);
       }
     }, 1000);
     return () => {clearInterval(interval); console.log('unmounted');}
