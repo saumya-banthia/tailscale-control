@@ -307,11 +307,18 @@ const Content: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
             bottomSeparator='standard'>
             Advanced Settings
           </ButtonItem>
-          <Field 
-            focusable={true}
-            bottomSeparator='none'
-            label="Device Status"/>
-          {deviceStatus}
+          <Focusable
+            focusWithinClassName="gpfocuswithin"
+            onActivate={() => {}}
+            style={{
+              width: '100%',
+              alignContent: 'center',
+              justifyContent: 'center',
+              margin: 'auto',
+              padding: 'auto',
+            }}>
+              {deviceStatus}
+          </Focusable>
           <Field bottomSeparator='standard'/>
           <Field
             focusable={true}
