@@ -13,6 +13,7 @@ import {
   ConfirmModal,
   ButtonItem,
   showModal,
+  Focusable
 } from "decky-frontend-lib";
 import { VFC,
          useState,
@@ -214,8 +215,11 @@ const Content: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
 
   const popupMiscSetting = () => {
     let closePopup = () => {};
-    let login_server: string, custom_flags: string = '';
     let Popup = () => {
+      var login_server_getter = localStorage.getItem(LOCAL_STORAGE_KEY_TAILSCALE_LOGIN_SERVER);
+      var custom_flags_getter = localStorage.getItem(LOCAL_STORAGE_KEY_TAILSCALE_UP_CUSTOM_FLAGS);
+      const [login_server, set_login_server] = useState<string>(login_server_getter? JSON.parse(login_server_getter).value : '');
+      const [custom_flags, set_custom_flags] = useState<string>(custom_flags_getter? JSON.parse(custom_flags_getter).value : DEFAULT_TAILSCALE_UP_CUSTOM_FLAGS);
 
       return <ConfirmModal closeModal={closePopup} strTitle="Advanced Settings"  
         onOK={() => {
@@ -228,43 +232,16 @@ const Content: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
           }
         }}>
             <p>Clicking Confirm will restart Tailscale if it is running</p>
-            <DropdownItem
-              bottomSeparator='none'
-              onMenuOpened={() => getExitNodeIPList()}
-              disabled={tailscaleExitNodeIPListDisabled}
-              menuLabel='Exit Node IP'
-              label='Exit Node IP'
-              description='Select an Exit Node IP, Note: this is currently NOT synced to changes made outside of the plugin, unlike tailscale toggle.'
-              onChange={setNodeIP}
-              selectedOption={tailscaleExitNodeIPList.find((o) => o.label === tailscaleNodeIP)?.data || 0}
-              rgOptions={tailscaleExitNodeIPList.map((o) => ({
-                data: o.data,
-                label: o.label
-              }))} />
-            <ToggleField
-              bottomSeparator='standard'
-              checked={tailscaleExitNode}
-              label='Toggle Exit Node'
-              description='Enter a valid Exit Node IP before toggling Exit Node On or Off'
-              disabled={tailscaleExitNodeIPListDisabled}
-              onChange={toggleExitNode} />
-            <ToggleField
-              bottomSeparator='standard'
-              checked={tailscaleAllowLAN}
-              label='Toggle LAN Access'
-              description='WARNING: Disabling LAN access, may cause your SSH to become inaccessible (this can be reversed through Desktop Mode)'
-              disabled={tailscaleExitNode && !tailscaleExitNodeIPListDisabled ? false : true}
-              onChange={toggleLANAccess} />
             <TextField
               label="Tailscale Login Server"
               description="If you are running Headscale, use desktop mode to login for the 1st time (to generate login token). Leaving blank uses default."
-              value={tailscaleLoginServer} 
-              onChange={(event) => login_server = event.target.value} />
+              value={login_server} 
+              onChange={(Event) => set_login_server(Event.target.value)} />
             <TextField
               label="Tailscale Up Custom Flags"
               description="Remember checking your --operator, which defaults to 'deck' for SteamOS. Leaving blank will reset to default i.e.: --operator=deck."
-              value={tailscaleUpCustomFlags} 
-              onChange={(event) => custom_flags = event.target.value} />
+              value={custom_flags} 
+              onChange={(Event) => set_custom_flags(Event.target.value)} />
           </ConfirmModal>
     };
 
@@ -301,6 +278,26 @@ const Content: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
             label='Toggle Tailscale'
             description='Toggles Tailscale On or Off'
             onChange={toggleTailscale} />
+          <DropdownItem
+              bottomSeparator='none'
+              onMenuOpened={() => getExitNodeIPList()}
+              disabled={tailscaleExitNodeIPListDisabled}
+              menuLabel='Exit Node IP'
+              label='Exit Node IP'
+              description='Select an Exit Node IP, Note: this is currently NOT synced to changes made outside of the plugin, unlike tailscale toggle.'
+              onChange={setNodeIP}
+              selectedOption={tailscaleExitNodeIPList.find((o) => o.label === tailscaleNodeIP)?.data || 0}
+              rgOptions={tailscaleExitNodeIPList.map((o) => ({
+                data: o.data,
+                label: o.label
+              }))} />
+          <ToggleField
+            bottomSeparator='standard'
+            checked={tailscaleAllowLAN}
+            label='Toggle LAN Access'
+            description='WARNING: Disabling LAN access, may cause your SSH to become inaccessible (this can be reversed through by re-enabling)'
+            disabled={tailscaleNodeIP === ''}
+            onChange={toggleLANAccess} />
           <ButtonItem
             layout="below"
             onClick={popupMiscSetting}
