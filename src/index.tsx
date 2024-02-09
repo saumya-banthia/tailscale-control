@@ -22,7 +22,6 @@ import { GiMeshNetwork } from "react-icons/gi";
 import qr from "../assets/qr.svg"
 
 const LOCAL_STORAGE_KEY_TAILSCALE_TOGGLE = 'tailscaleToggle';
-const LOCAL_STORAGE_KEY_TAILSCALE_EXIT_NODE = 'tailscaleExitNode';
 const LOCAL_STORAGE_KEY_TAILSCALE_NODE_IP = 'tailscaleNodeIP';
 const LOCAL_STORAGE_KEY_TAILSCALE_ALLOW_LAN = 'tailscaleAllowLAN';
 const LOCAL_STORAGE_KEY_TAILSCALE_EXIT_NODE_LIST = 'tailscaleExitNodeList';
@@ -35,7 +34,6 @@ const DEFAULT_TAILSCALE_UP_CUSTOM_FLAGS = "--operator=deck";
 const Content: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
 
   const [ tailscaleToggleState, setTailscaleToggleState ] = useState<boolean>(getInitialState(LOCAL_STORAGE_KEY_TAILSCALE_TOGGLE, false));
-  const [ tailscaleExitNode, setTailscaleExitNode ] = useState<boolean>(getInitialState(LOCAL_STORAGE_KEY_TAILSCALE_EXIT_NODE, false));
   const [ tailscaleExitNodeIPList, setTailscaleExitNodeIPList ] = useState<DropdownOption[]>(getInitialState(LOCAL_STORAGE_KEY_TAILSCALE_EXIT_NODE_LIST, [{ data: 0, label: "Unset" }]));
   const [ tailscaleExitNodeIPListDisabled, setTailscaleExitNodeIPListDisabled ] = useState<boolean>(getInitialState(LOCAL_STORAGE_KEY_TAILSCALE_EXIT_NODE_LIST_DISABLED, true));
   const [ tailscaleNodeIP, setTailscaleNodeIP ] = useState<string>(getInitialState(LOCAL_STORAGE_KEY_TAILSCALE_NODE_IP, ''));
@@ -109,31 +107,29 @@ const Content: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
       }
     } 
     if (toggle === 'up') {
-      var exit_node_getter = localStorage.getItem(LOCAL_STORAGE_KEY_TAILSCALE_EXIT_NODE);
       var node_ip_getter = localStorage.getItem(LOCAL_STORAGE_KEY_TAILSCALE_NODE_IP);
       var allow_lan_access_getter = localStorage.getItem(LOCAL_STORAGE_KEY_TAILSCALE_ALLOW_LAN);
       var login_server_getter = localStorage.getItem(LOCAL_STORAGE_KEY_TAILSCALE_LOGIN_SERVER);
       var custom_flags_getter = localStorage.getItem(LOCAL_STORAGE_KEY_TAILSCALE_UP_CUSTOM_FLAGS);
-      var exit_node = exit_node_getter? JSON.parse(exit_node_getter).value : false;
       var node_ip = node_ip_getter? JSON.parse(node_ip_getter).value : '';
       var login_server = login_server_getter? JSON.parse(login_server_getter).value : '';
       var custom_flags = custom_flags_getter? JSON.parse(custom_flags_getter).value : DEFAULT_TAILSCALE_UP_CUSTOM_FLAGS;
       var allow_lan_access = allow_lan_access_getter? JSON.parse(allow_lan_access_getter).value : true;
       const data = await serverAPI.callPluginMethod<{
-        exit_node: boolean, 
         node_ip: string, 
         allow_lan_access: boolean,
         custom_flags: string,
         login_server: string,
       }, boolean>('up', {
-        exit_node, 
-        node_ip, 
-        allow_lan_access, 
-        custom_flags: custom_flags, 
-        login_server
+        node_ip: node_ip, 
+        allow_lan_access: allow_lan_access, 
+        custom_flags: custom_flags,
+        login_server: login_server
       });
+      // console.log("Toggle Up Data: " + data.result);
+      // console.log("Toggle Up Success: " + data.success);
       if (data.success) {
-        console.log("Toggle up state: " + data.result + " with login server: " + login_server);
+        console.log("Toggle up state: " + data.result + " with login server: " + login_server + " and custom flags: " + custom_flags + " and node ip: " + node_ip + " and allow lan access: " + allow_lan_access);
         getExitNodeIPList();
       }
     }
@@ -150,13 +146,6 @@ const Content: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
   function isValidUrl(url: string): boolean {
     const urlPattern = /^(https?:\/\/)?([\w.-]+)\.([a-z]{2,})(:\d{2,5})?(\/\S*)?$/i;
     return urlPattern.test(url);
-  }
-
-  const toggleExitNode = async(switchValue: boolean) => {
-    togglerAndSetter(setTailscaleExitNode, LOCAL_STORAGE_KEY_TAILSCALE_EXIT_NODE, switchValue);
-    // if toggling exit node off, unset the exit node IP
-    switchValue ? console.log(tailscaleNodeIP) : togglerAndSetter(setTailscaleNodeIP, LOCAL_STORAGE_KEY_TAILSCALE_NODE_IP, '');
-    tailscaleUp("Exit Node toggled: "+ switchValue);
   }
 
   const toggleTailscale = async(switchValue: boolean) => {
@@ -286,12 +275,10 @@ const Content: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
   // set up the initial state
   useEffect(() => {
     console.log('mounted');
-    var exit_node_getter = localStorage.getItem(LOCAL_STORAGE_KEY_TAILSCALE_EXIT_NODE);
     var node_ip_getter = localStorage.getItem(LOCAL_STORAGE_KEY_TAILSCALE_NODE_IP);
     var allow_lan_access_getter = localStorage.getItem(LOCAL_STORAGE_KEY_TAILSCALE_ALLOW_LAN);
     var exit_node_list_getter = localStorage.getItem(LOCAL_STORAGE_KEY_TAILSCALE_EXIT_NODE_LIST);
     var exit_node_list_disabled_getter = localStorage.getItem(LOCAL_STORAGE_KEY_TAILSCALE_EXIT_NODE_LIST_DISABLED);
-    exit_node_getter? JSON.parse(exit_node_getter).value : false;
     node_ip_getter? JSON.parse(node_ip_getter).value : false;
     allow_lan_access_getter? JSON.parse(allow_lan_access_getter).value : true;
     exit_node_list_getter? JSON.parse(exit_node_list_getter).value : [{ data: 0, label: "Unset" }];

@@ -27,7 +27,6 @@ logger.info("[backend] Settings path: {}".format(settingsDir))
 class Plugin:
     async def up(
         self,
-        exit_node=False,
         node_ip="",
         allow_lan_access=True,
         custom_flags="",
@@ -37,7 +36,6 @@ class Plugin:
         Bring up the Tailscale connection.
 
         Args:
-            exit_node (bool): Whether to use an exit node.
             node_ip (str): The IP address of the exit node.
             allow_lan_access (bool): Whether to allow LAN access.
             login_server (str): Tailscale login server url
@@ -46,10 +44,9 @@ class Plugin:
             bool: True if the Tailscale connection is successfully brought up, False otherwise.
         """
         try:
-            exit_node = bool(exit_node)
             allow_lan_access = bool(allow_lan_access)
-            cmd_list = ["tailscale", "up"]
-            cmd_list.append(f"--exit-node={node_ip}") if (exit_node) or (not exit_node and node_ip is "") else None
+            node_ip = str(node_ip).split()[0] if node_ip else ""
+            cmd_list = ["tailscale", "up", f"--exit-node={node_ip}"]
             cmd_list.append("--exit-node-allow-lan-access=true") if node_ip != "" and allow_lan_access else None
             [cmd_list.append(elem) for elem in custom_flags.split()] if custom_flags != "" else None
             cmd_list.append(f"--login-server={login_server}") if login_server else None
@@ -105,9 +102,9 @@ class Plugin:
             # over-engineered regex to avoid matching "exit node" in the middle of a line
             node_pattern = ip_pattern + r".*(-|offline|online|active|idle).*exit node"
             return [
-                re.findall(ip_pattern, ip)[0]
-                for ip in lines
-                if re.search(node_pattern, ip)
+                f"{re.findall(ip_pattern, line)[0]} ({line.split()[1]})"
+                for line in lines
+                if re.search(node_pattern, line)
             ]
         except Exception as e:
             logger.error(e, "error")
