@@ -76,10 +76,12 @@ const Content: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
     const data = await serverAPI.callPluginMethod("get_tailscale_exit_node_ip_list", {});
     if (data.success) {
       var exitNodeIPList = data.result as string[];
+      // console.log("Data Exit Node IP List: ");
+      // console.log(exitNodeIPList);
       var exitNodeIPListOptions: DropdownOption[] = [{ data: 0, label: "Unset" }];
       // use map to populate the dropdown list
       exitNodeIPList.map((ip, _) => {
-        if (exitNodeIPListOptions.find((o) => String(o.label) == String(ip)) || ip === null || String(ip) === '') {
+        if (exitNodeIPListOptions.find((o) => String(o.label) === String(ip)) || ip === null || String(ip) === '') {
           console.log("IP already exists in list: " + ip);
         } else {
           // append to the end of the list
@@ -91,9 +93,7 @@ const Content: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
       togglerAndSetter(setTailscaleExitNodeIPList, LOCAL_STORAGE_KEY_TAILSCALE_EXIT_NODE_LIST, exitNodeIPListOptions);
       togglerAndSetter(setTailscaleExitNodeIPListDisabled, LOCAL_STORAGE_KEY_TAILSCALE_EXIT_NODE_LIST_DISABLED, false)
       var toggleState = localStorage.getItem(LOCAL_STORAGE_KEY_TAILSCALE_TOGGLE);
-      if (toggleState) {
-        JSON.parse(toggleState).value ? togglerAndSetter(setTailscaleExitNodeIPListDisabled, LOCAL_STORAGE_KEY_TAILSCALE_EXIT_NODE_LIST_DISABLED, false) : togglerAndSetter(setTailscaleExitNodeIPListDisabled, LOCAL_STORAGE_KEY_TAILSCALE_EXIT_NODE_LIST_DISABLED, true);
-      }
+      toggleState? JSON.parse(toggleState).value ? togglerAndSetter(setTailscaleExitNodeIPListDisabled, LOCAL_STORAGE_KEY_TAILSCALE_EXIT_NODE_LIST_DISABLED, false) : togglerAndSetter(setTailscaleExitNodeIPListDisabled, LOCAL_STORAGE_KEY_TAILSCALE_EXIT_NODE_LIST_DISABLED, true) : null;
     }
   }
 
@@ -112,25 +112,25 @@ const Content: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
       var allow_lan_access_getter = localStorage.getItem(LOCAL_STORAGE_KEY_TAILSCALE_ALLOW_LAN);
       var login_server_getter = localStorage.getItem(LOCAL_STORAGE_KEY_TAILSCALE_LOGIN_SERVER);
       var custom_flags_getter = localStorage.getItem(LOCAL_STORAGE_KEY_TAILSCALE_UP_CUSTOM_FLAGS);
-      var node_ip = node_ip_getter? JSON.parse(node_ip_getter).value : '';
-      var login_server = login_server_getter? JSON.parse(login_server_getter).value : '';
-      var custom_flags = custom_flags_getter? JSON.parse(custom_flags_getter).value : DEFAULT_TAILSCALE_UP_CUSTOM_FLAGS;
-      var allow_lan_access = allow_lan_access_getter? JSON.parse(allow_lan_access_getter).value : true;
+      var node_ip_var = node_ip_getter? JSON.parse(node_ip_getter).value : '';
+      var login_server_var = login_server_getter? JSON.parse(login_server_getter).value : TAILSCALE_LOGIN_SERVER;
+      var custom_flags_var = custom_flags_getter? JSON.parse(custom_flags_getter).value : DEFAULT_TAILSCALE_UP_CUSTOM_FLAGS;
+      var allow_lan_access_var = allow_lan_access_getter? JSON.parse(allow_lan_access_getter).value : true;
       const data = await serverAPI.callPluginMethod<{
         node_ip: string, 
         allow_lan_access: boolean,
         custom_flags: string,
         login_server: string,
       }, boolean>('up', {
-        node_ip: node_ip, 
-        allow_lan_access: allow_lan_access, 
-        custom_flags: custom_flags,
-        login_server: login_server
+        node_ip: node_ip_var, 
+        allow_lan_access: allow_lan_access_var, 
+        custom_flags: custom_flags_var,
+        login_server: login_server_var
       });
       // console.log("Toggle Up Data: " + data.result);
       // console.log("Toggle Up Success: " + data.success);
       if (data.success) {
-        console.log("Toggle up state: " + data.result + " with login server: " + login_server + " and custom flags: " + custom_flags + " and node ip: " + node_ip + " and allow lan access: " + allow_lan_access);
+        console.log("Toggle up state: " + data.result + " with login server: " + login_server_var + " and custom flags: " + custom_flags_var + " and node ip: " + node_ip_var + " and allow lan access: " + allow_lan_access_var);
         getExitNodeIPList();
       }
     }
@@ -184,8 +184,6 @@ const Content: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
   const getDeviceStatus = async () => {
     const data = await serverAPI.callPluginMethod("get_tailscale_device_status", {});
     if (data.success) {
-      const deviceKeys = Object.keys(data.result);
-      const transposedDeviceStatus = transposeObject(data.result);
       setDeviceStatus(
         // TODO: when you have time, see if this can be replaced with ReorderableList
         // https://wiki.deckbrew.xyz/en/api-docs/decky-frontend-lib/custom/components/ReorderableList
@@ -193,13 +191,13 @@ const Content: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
           <table>
             <thead>
               <tr>
-                {deviceKeys.map((key) => (
+                {Object.keys(data.result).map((key) => (
                   <th>{key}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {transposedDeviceStatus.map((row) => (
+              {transposeObject(data.result).map((row) => (
                 <tr>
                   {row.map((value) => (
                     <td>{value}</td>
@@ -304,6 +302,9 @@ const Content: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
             bottomSeparator='standard'>
             Advanced Settings
           </ButtonItem>
+          <Field
+            bottomSeparator='none'
+            label={"Device Status"}/>
           <Focusable
             focusWithinClassName="gpfocuswithin"
             onActivate={() => {}}
