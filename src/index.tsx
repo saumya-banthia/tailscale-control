@@ -166,11 +166,26 @@ const Content: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
   }
 
   const setLoginServer = async(url: string) => {
-    togglerAndSetter(setTailscaleLoginServer, LOCAL_STORAGE_KEY_TAILSCALE_LOGIN_SERVER, isValidUrl(url) ? url : TAILSCALE_LOGIN_SERVER);
+    // console.log("Trying to set login server to: ");
+    // console.log(url)
+    // console.log(isValidUrl(url))
+    // console.log(url===TAILSCALE_LOGIN_SERVER)
+    // console.log(typeof(url))
+    togglerAndSetter(setTailscaleLoginServer, LOCAL_STORAGE_KEY_TAILSCALE_LOGIN_SERVER, (isValidUrl(url) || url===TAILSCALE_LOGIN_SERVER) ? url : TAILSCALE_LOGIN_SERVER);
+    // var login_server_getter = localStorage.getItem(LOCAL_STORAGE_KEY_TAILSCALE_LOGIN_SERVER);
+    // var login_server_var = login_server_getter? JSON.parse(login_server_getter).value : "NOT SET"
+    // console.log("Login Server set to: "+ login_server_var);
   }
 
   const setCustomFlags = async(flags: string) => {
-    togglerAndSetter(setTailscaleUpCustomFlags, LOCAL_STORAGE_KEY_TAILSCALE_UP_CUSTOM_FLAGS, flags ? flags : DEFAULT_TAILSCALE_UP_CUSTOM_FLAGS);
+    // console.log("Trying to set custom flags to: ");
+    // console.log(flags)
+    // console.log(typeof(flags))
+    // Ensure using regex --operator=\S+ that flags contains an operator that is not empty
+    togglerAndSetter(setTailscaleUpCustomFlags, LOCAL_STORAGE_KEY_TAILSCALE_UP_CUSTOM_FLAGS, flags.match(/--operator=\S+/) ? flags : DEFAULT_TAILSCALE_UP_CUSTOM_FLAGS);
+    // var custom_flags_getter = localStorage.getItem(LOCAL_STORAGE_KEY_TAILSCALE_UP_CUSTOM_FLAGS);
+    // var custom_flags_var = custom_flags_getter? JSON.parse(custom_flags_getter).value : "NOT SET"
+    // console.log("Custom Flags set to: "+ custom_flags_var);
   }
 
   const getTailscaleState = async () => {
@@ -214,25 +229,29 @@ const Content: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
   const popupMiscSetting = () => {
     let closePopup = () => {};
     let Popup = () => {
-      var login_server_getter = localStorage.getItem(LOCAL_STORAGE_KEY_TAILSCALE_LOGIN_SERVER);
-      var custom_flags_getter = localStorage.getItem(LOCAL_STORAGE_KEY_TAILSCALE_UP_CUSTOM_FLAGS);
-      const [login_server, set_login_server] = useState<string>(login_server_getter? JSON.parse(login_server_getter).value : '');
-      const [custom_flags, set_custom_flags] = useState<string>(custom_flags_getter? JSON.parse(custom_flags_getter).value : DEFAULT_TAILSCALE_UP_CUSTOM_FLAGS);
+      const [login_server, set_login_server] = useState<string>(tailscaleLoginServer);
+      const [custom_flags, set_custom_flags] = useState<string>(tailscaleUpCustomFlags);
 
       return <ConfirmModal closeModal={closePopup} strTitle="Advanced Settings"  
         onOK={() => {
-          login_server ? setLoginServer(login_server) : null;
-          custom_flags ? setCustomFlags(custom_flags) : null;
-          if (tailscaleToggleState) {
-            console.log("Restart Tailscale: up config change")
+          login_server ? setLoginServer(login_server) : setLoginServer(TAILSCALE_LOGIN_SERVER);
+          custom_flags ? setCustomFlags(custom_flags) : setCustomFlags(DEFAULT_TAILSCALE_UP_CUSTOM_FLAGS);
+          var tailscale_state_getter = localStorage.getItem(LOCAL_STORAGE_KEY_TAILSCALE_TOGGLE);
+          // var ts_login_server_getter = localStorage.getItem(LOCAL_STORAGE_KEY_TAILSCALE_LOGIN_SERVER);
+          // var ts_custom_flags_getter = localStorage.getItem(LOCAL_STORAGE_KEY_TAILSCALE_UP_CUSTOM_FLAGS);
+          var tailscale_state = tailscale_state_getter? JSON.parse(tailscale_state_getter).value : false;
+          // var ls = ts_login_server_getter? JSON.parse(ts_login_server_getter).value : "UNSET LS";
+          // var cf = ts_custom_flags_getter? JSON.parse(ts_custom_flags_getter).value : "UNSET CF";
+          if (tailscale_state) {
             callPluginMethod('down');
-            tailscaleUp("Restart with flag: --login-server="+ tailscaleLoginServer + " " + tailscaleUpCustomFlags);
+            tailscaleUp("Restarting with login server: "+ tailscaleLoginServer + " and custom flags: "+ tailscaleUpCustomFlags);
           }
         }}>
+            <p style={{color: 'red', fontWeight: 'bold'}}>NOTE: Only change stuff here if you know what you are doing, otherwise it may result in a broken config.</p>
             <p>Clicking Confirm will restart Tailscale if it is running</p>
             <TextField
               label="Tailscale Login Server"
-              description="If you are running Headscale, use desktop mode to login for the 1st time (to generate login token). Leaving blank uses default."
+              description="If you are running Headscale, use desktop mode to login for the 1st time (to generate login token). Leaving blank is default behavior."
               value={login_server} 
               onChange={(Event) => set_login_server(Event.target.value)} />
             <TextField
