@@ -9,6 +9,11 @@ import {
   DropdownItem,
   DropdownOption,
   Field,
+  TextField,
+  ConfirmModal,
+  ButtonItem,
+  showModal,
+  Focusable
 } from "decky-frontend-lib";
 import { VFC,
          useState,
@@ -18,19 +23,23 @@ import { GiMeshNetwork } from "react-icons/gi";
 import qr from "../assets/qr.svg"
 
 const LOCAL_STORAGE_KEY_TAILSCALE_TOGGLE = 'tailscaleToggle';
-const LOCAL_STORAGE_KEY_TAILSCALE_EXIT_NODE = 'tailscaleExitNode';
 const LOCAL_STORAGE_KEY_TAILSCALE_NODE_IP = 'tailscaleNodeIP';
 const LOCAL_STORAGE_KEY_TAILSCALE_ALLOW_LAN = 'tailscaleAllowLAN';
 const LOCAL_STORAGE_KEY_TAILSCALE_EXIT_NODE_LIST = 'tailscaleExitNodeList';
+const LOCAL_STORAGE_KEY_TAILSCALE_LOGIN_SERVER = 'tailscaleLoginServer';
+const LOCAL_STORAGE_KEY_TAILSCALE_UP_CUSTOM_FLAGS = 'tailscaleUpCustomFlags';
 const LOCAL_STORAGE_KEY_TAILSCALE_EXIT_NODE_LIST_DISABLED = 'tailscaleExitNodeListDisabled';
+const TAILSCALE_LOGIN_SERVER = "";
+const DEFAULT_TAILSCALE_UP_CUSTOM_FLAGS = "--operator=deck";
 
 const Content: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
 
   const [ tailscaleToggleState, setTailscaleToggleState ] = useState<boolean>(getInitialState(LOCAL_STORAGE_KEY_TAILSCALE_TOGGLE, false));
-  const [ tailscaleExitNode, setTailscaleExitNode ] = useState<boolean>(getInitialState(LOCAL_STORAGE_KEY_TAILSCALE_EXIT_NODE, false));
   const [ tailscaleExitNodeIPList, setTailscaleExitNodeIPList ] = useState<DropdownOption[]>(getInitialState(LOCAL_STORAGE_KEY_TAILSCALE_EXIT_NODE_LIST, [{ data: 0, label: "Unset" }]));
-  const [ tailscaleExitNodeIPListDisabled, setTailscaleNodeIPListDisabled ] = useState<boolean>(getInitialState(LOCAL_STORAGE_KEY_TAILSCALE_EXIT_NODE_LIST_DISABLED, true));
+  const [ tailscaleExitNodeIPListDisabled, setTailscaleExitNodeIPListDisabled ] = useState<boolean>(getInitialState(LOCAL_STORAGE_KEY_TAILSCALE_EXIT_NODE_LIST_DISABLED, true));
   const [ tailscaleNodeIP, setTailscaleNodeIP ] = useState<string>(getInitialState(LOCAL_STORAGE_KEY_TAILSCALE_NODE_IP, ''));
+  const [ tailscaleLoginServer, setTailscaleLoginServer ] = useState<string>(getInitialState(LOCAL_STORAGE_KEY_TAILSCALE_LOGIN_SERVER, TAILSCALE_LOGIN_SERVER));
+  const [ tailscaleUpCustomFlags, setTailscaleUpCustomFlags ] = useState<string>(getInitialState(LOCAL_STORAGE_KEY_TAILSCALE_UP_CUSTOM_FLAGS, DEFAULT_TAILSCALE_UP_CUSTOM_FLAGS));
   const [ tailscaleAllowLAN, setTailscaleAllowLAN ] = useState<boolean>(getInitialState(LOCAL_STORAGE_KEY_TAILSCALE_ALLOW_LAN, true));
   // TODO: when you have time, see if this can be replaced with ReorderableList
   // https://wiki.deckbrew.xyz/en/api-docs/decky-frontend-lib/custom/components/ReorderableList
@@ -67,10 +76,12 @@ const Content: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
     const data = await serverAPI.callPluginMethod("get_tailscale_exit_node_ip_list", {});
     if (data.success) {
       var exitNodeIPList = data.result as string[];
+      // console.log("Data Exit Node IP List: ");
+      // console.log(exitNodeIPList);
       var exitNodeIPListOptions: DropdownOption[] = [{ data: 0, label: "Unset" }];
       // use map to populate the dropdown list
       exitNodeIPList.map((ip, _) => {
-        if (exitNodeIPListOptions.find((o) => String(o.label) == String(ip)) || ip === null || String(ip) === '') {
+        if (exitNodeIPListOptions.find((o) => String(o.label) === String(ip)) || ip === null || String(ip) === '') {
           console.log("IP already exists in list: " + ip);
         } else {
           // append to the end of the list
@@ -80,11 +91,9 @@ const Content: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
       console.log("Exit Node IP List: ");
       console.log(exitNodeIPListOptions);
       togglerAndSetter(setTailscaleExitNodeIPList, LOCAL_STORAGE_KEY_TAILSCALE_EXIT_NODE_LIST, exitNodeIPListOptions);
-      togglerAndSetter(setTailscaleNodeIPListDisabled, LOCAL_STORAGE_KEY_TAILSCALE_EXIT_NODE_LIST_DISABLED, false)
+      togglerAndSetter(setTailscaleExitNodeIPListDisabled, LOCAL_STORAGE_KEY_TAILSCALE_EXIT_NODE_LIST_DISABLED, false)
       var toggleState = localStorage.getItem(LOCAL_STORAGE_KEY_TAILSCALE_TOGGLE);
-      if (toggleState) {
-        JSON.parse(toggleState).value ? togglerAndSetter(setTailscaleNodeIPListDisabled, LOCAL_STORAGE_KEY_TAILSCALE_EXIT_NODE_LIST_DISABLED, false) : togglerAndSetter(setTailscaleNodeIPListDisabled, LOCAL_STORAGE_KEY_TAILSCALE_EXIT_NODE_LIST_DISABLED, true);
-      }
+      toggleState? JSON.parse(toggleState).value ? togglerAndSetter(setTailscaleExitNodeIPListDisabled, LOCAL_STORAGE_KEY_TAILSCALE_EXIT_NODE_LIST_DISABLED, false) : togglerAndSetter(setTailscaleExitNodeIPListDisabled, LOCAL_STORAGE_KEY_TAILSCALE_EXIT_NODE_LIST_DISABLED, true) : null;
     }
   }
 
@@ -95,19 +104,33 @@ const Content: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
         var value: DropdownOption[] = [{ data: 0, label: "Unset" }];
         togglerAndSetter(setTailscaleExitNodeIPList, LOCAL_STORAGE_KEY_TAILSCALE_EXIT_NODE_LIST, value);
         togglerAndSetter(setTailscaleNodeIP, LOCAL_STORAGE_KEY_TAILSCALE_NODE_IP, '');
-        togglerAndSetter(setTailscaleNodeIPListDisabled, LOCAL_STORAGE_KEY_TAILSCALE_EXIT_NODE_LIST_DISABLED, true);
+        togglerAndSetter(setTailscaleExitNodeIPListDisabled, LOCAL_STORAGE_KEY_TAILSCALE_EXIT_NODE_LIST_DISABLED, true);
       }
     } 
     if (toggle === 'up') {
-      var exit_node_getter = localStorage.getItem(LOCAL_STORAGE_KEY_TAILSCALE_EXIT_NODE);
       var node_ip_getter = localStorage.getItem(LOCAL_STORAGE_KEY_TAILSCALE_NODE_IP);
       var allow_lan_access_getter = localStorage.getItem(LOCAL_STORAGE_KEY_TAILSCALE_ALLOW_LAN);
-      var exit_node = exit_node_getter? JSON.parse(exit_node_getter).value : false;
-      var node_ip = node_ip_getter? JSON.parse(node_ip_getter).value : '';
-      var allow_lan_access = allow_lan_access_getter? JSON.parse(allow_lan_access_getter).value : true;
-      const data = await serverAPI.callPluginMethod<{exit_node: boolean, node_ip: string, allow_lan_access: boolean}, boolean>('up', {exit_node, node_ip, allow_lan_access});
+      var login_server_getter = localStorage.getItem(LOCAL_STORAGE_KEY_TAILSCALE_LOGIN_SERVER);
+      var custom_flags_getter = localStorage.getItem(LOCAL_STORAGE_KEY_TAILSCALE_UP_CUSTOM_FLAGS);
+      var node_ip_var = node_ip_getter? JSON.parse(node_ip_getter).value : '';
+      var login_server_var = login_server_getter? JSON.parse(login_server_getter).value : TAILSCALE_LOGIN_SERVER;
+      var custom_flags_var = custom_flags_getter? JSON.parse(custom_flags_getter).value : DEFAULT_TAILSCALE_UP_CUSTOM_FLAGS;
+      var allow_lan_access_var = allow_lan_access_getter? JSON.parse(allow_lan_access_getter).value : true;
+      const data = await serverAPI.callPluginMethod<{
+        node_ip: string, 
+        allow_lan_access: boolean,
+        custom_flags: string,
+        login_server: string,
+      }, boolean>('up', {
+        node_ip: node_ip_var, 
+        allow_lan_access: allow_lan_access_var, 
+        custom_flags: custom_flags_var,
+        login_server: login_server_var
+      });
+      // console.log("Toggle Up Data: " + data.result);
+      // console.log("Toggle Up Success: " + data.success);
       if (data.success) {
-        console.log("Toggle up state: " + data.result);
+        console.log("Toggle up state: " + data.result + " with login server: " + login_server_var + " and custom flags: " + custom_flags_var + " and node ip: " + node_ip_var + " and allow lan access: " + allow_lan_access_var);
         getExitNodeIPList();
       }
     }
@@ -121,11 +144,9 @@ const Content: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
     }
   }
 
-  const toggleExitNode = async(switchValue: boolean) => {
-    togglerAndSetter(setTailscaleExitNode, LOCAL_STORAGE_KEY_TAILSCALE_EXIT_NODE, switchValue);
-    // if toggling exit node off, unset the exit node IP
-    switchValue ? console.log(tailscaleNodeIP) : togglerAndSetter(setTailscaleNodeIP, LOCAL_STORAGE_KEY_TAILSCALE_NODE_IP, '');
-    tailscaleUp("Exit Node toggled: "+ switchValue);
+  function isValidUrl(url: string): boolean {
+    const urlPattern = /^(https?:\/\/)?([\w.-]+)\.([a-z]{2,})(:\d{2,5})?(\/\S*)?$/i;
+    return urlPattern.test(url);
   }
 
   const toggleTailscale = async(switchValue: boolean) => {
@@ -144,6 +165,29 @@ const Content: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
     tailscaleUp("Exit Node IP set to: "+ ip.label);
   }
 
+  const setLoginServer = async(url: string) => {
+    // console.log("Trying to set login server to: ");
+    // console.log(url)
+    // console.log(isValidUrl(url))
+    // console.log(url===TAILSCALE_LOGIN_SERVER)
+    // console.log(typeof(url))
+    togglerAndSetter(setTailscaleLoginServer, LOCAL_STORAGE_KEY_TAILSCALE_LOGIN_SERVER, (isValidUrl(url) || url===TAILSCALE_LOGIN_SERVER) ? url : TAILSCALE_LOGIN_SERVER);
+    // var login_server_getter = localStorage.getItem(LOCAL_STORAGE_KEY_TAILSCALE_LOGIN_SERVER);
+    // var login_server_var = login_server_getter? JSON.parse(login_server_getter).value : "NOT SET"
+    // console.log("Login Server set to: "+ login_server_var);
+  }
+
+  const setCustomFlags = async(flags: string) => {
+    // console.log("Trying to set custom flags to: ");
+    // console.log(flags)
+    // console.log(typeof(flags))
+    // Ensure using regex --operator=\S+ that flags contains an operator that is not empty
+    togglerAndSetter(setTailscaleUpCustomFlags, LOCAL_STORAGE_KEY_TAILSCALE_UP_CUSTOM_FLAGS, flags.match(/--operator=\S+/) ? flags : DEFAULT_TAILSCALE_UP_CUSTOM_FLAGS);
+    // var custom_flags_getter = localStorage.getItem(LOCAL_STORAGE_KEY_TAILSCALE_UP_CUSTOM_FLAGS);
+    // var custom_flags_var = custom_flags_getter? JSON.parse(custom_flags_getter).value : "NOT SET"
+    // console.log("Custom Flags set to: "+ custom_flags_var);
+  }
+
   const getTailscaleState = async () => {
     const data = await serverAPI.callPluginMethod("get_tailscale_state", {});
     if (data.success) {
@@ -155,8 +199,6 @@ const Content: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
   const getDeviceStatus = async () => {
     const data = await serverAPI.callPluginMethod("get_tailscale_device_status", {});
     if (data.success) {
-      const deviceKeys = Object.keys(data.result);
-      const transposedDeviceStatus = transposeObject(data.result);
       setDeviceStatus(
         // TODO: when you have time, see if this can be replaced with ReorderableList
         // https://wiki.deckbrew.xyz/en/api-docs/decky-frontend-lib/custom/components/ReorderableList
@@ -164,13 +206,13 @@ const Content: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
           <table>
             <thead>
               <tr>
-                {deviceKeys.map((key) => (
+                {Object.keys(data.result).map((key) => (
                   <th>{key}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {transposedDeviceStatus.map((row) => (
+              {transposeObject(data.result).map((row) => (
                 <tr>
                   {row.map((value) => (
                     <td>{value}</td>
@@ -184,26 +226,62 @@ const Content: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
     }
   }
 
+  const popupMiscSetting = () => {
+    let closePopup = () => {};
+    let Popup = () => {
+      const [login_server, set_login_server] = useState<string>(tailscaleLoginServer);
+      const [custom_flags, set_custom_flags] = useState<string>(tailscaleUpCustomFlags);
+
+      return <ConfirmModal closeModal={closePopup} strTitle="Advanced Settings"  
+        onOK={() => {
+          login_server ? setLoginServer(login_server) : setLoginServer(TAILSCALE_LOGIN_SERVER);
+          custom_flags ? setCustomFlags(custom_flags) : setCustomFlags(DEFAULT_TAILSCALE_UP_CUSTOM_FLAGS);
+          var tailscale_state_getter = localStorage.getItem(LOCAL_STORAGE_KEY_TAILSCALE_TOGGLE);
+          // var ts_login_server_getter = localStorage.getItem(LOCAL_STORAGE_KEY_TAILSCALE_LOGIN_SERVER);
+          // var ts_custom_flags_getter = localStorage.getItem(LOCAL_STORAGE_KEY_TAILSCALE_UP_CUSTOM_FLAGS);
+          var tailscale_state = tailscale_state_getter? JSON.parse(tailscale_state_getter).value : false;
+          // var ls = ts_login_server_getter? JSON.parse(ts_login_server_getter).value : "UNSET LS";
+          // var cf = ts_custom_flags_getter? JSON.parse(ts_custom_flags_getter).value : "UNSET CF";
+          if (tailscale_state) {
+            callPluginMethod('down');
+            tailscaleUp("Restarting with login server: "+ tailscaleLoginServer + " and custom flags: "+ tailscaleUpCustomFlags);
+          }
+        }}>
+            <p style={{color: 'red', fontWeight: 'bold'}}>NOTE: Only change stuff here if you know what you are doing, otherwise it may result in a broken config.</p>
+            <p>Clicking Confirm will restart Tailscale if it is running</p>
+            <TextField
+              label="Tailscale Login Server"
+              description="If you are running Headscale, use desktop mode to login for the 1st time (to generate login token). Leaving blank is default behavior."
+              value={login_server} 
+              onChange={(Event) => set_login_server(Event.target.value)} />
+            <TextField
+              label="Tailscale Up Custom Flags"
+              description="Remember checking your --operator, which defaults to 'deck' for SteamOS. Leaving blank will reset to default i.e.: --operator=deck."
+              value={custom_flags} 
+              onChange={(Event) => set_custom_flags(Event.target.value)} />
+          </ConfirmModal>
+    };
+
+    const modal = showModal(<Popup />, window)
+    closePopup = modal.Close;
+  }
+
   // set up the initial state
   useEffect(() => {
     console.log('mounted');
-    var exit_node_getter = localStorage.getItem(LOCAL_STORAGE_KEY_TAILSCALE_EXIT_NODE);
     var node_ip_getter = localStorage.getItem(LOCAL_STORAGE_KEY_TAILSCALE_NODE_IP);
     var allow_lan_access_getter = localStorage.getItem(LOCAL_STORAGE_KEY_TAILSCALE_ALLOW_LAN);
     var exit_node_list_getter = localStorage.getItem(LOCAL_STORAGE_KEY_TAILSCALE_EXIT_NODE_LIST);
     var exit_node_list_disabled_getter = localStorage.getItem(LOCAL_STORAGE_KEY_TAILSCALE_EXIT_NODE_LIST_DISABLED);
-    exit_node_getter? JSON.parse(exit_node_getter).value : false;
     node_ip_getter? JSON.parse(node_ip_getter).value : false;
     allow_lan_access_getter? JSON.parse(allow_lan_access_getter).value : true;
     exit_node_list_getter? JSON.parse(exit_node_list_getter).value : [{ data: 0, label: "Unset" }];
     exit_node_list_disabled_getter? JSON.parse(exit_node_list_disabled_getter).value : true;
     const interval = setInterval(() => {
       getTailscaleState();
-      getDeviceStatus();
       var tailscaleState = localStorage.getItem(LOCAL_STORAGE_KEY_TAILSCALE_TOGGLE);
-      if (tailscaleState) {
-        JSON.parse(tailscaleState).value ? setTailscaleNodeIPListDisabled(false) : setTailscaleNodeIPListDisabled(true);
-      }
+      var is_ts_up = tailscaleState? JSON.parse(tailscaleState).value : false;
+      is_ts_up ? (setTailscaleExitNodeIPListDisabled(false), getDeviceStatus()) : (setDeviceStatus(<div>Offline</div>), setTailscaleExitNodeIPListDisabled(true));
     }, 1000);
     return () => {clearInterval(interval); console.log('unmounted');}
   }, [serverAPI]);
@@ -212,51 +290,60 @@ const Content: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
     <PanelSection title="Settings">
         <PanelSectionRow>
           <ToggleField
-          bottomSeparator='standard'
-          checked={tailscaleToggleState}
-          label='Toggle Tailscale'
-          description='Toggles Tailscale On or Off'
-          onChange={toggleTailscale} />
+            bottomSeparator='standard'
+            checked={tailscaleToggleState}
+            label='Toggle Tailscale'
+            description='Toggles Tailscale On or Off'
+            onChange={toggleTailscale} />
           <DropdownItem
-          bottomSeparator='none'
-          onMenuOpened={() => getExitNodeIPList()}
-          disabled={tailscaleExitNodeIPListDisabled}
-          menuLabel='Exit Node IP'
-          description='Select an Exit Node IP, Note: this is currently NOT synced to changes made outside of the plugin, unlike tailscale toggle.'
-          onChange={setNodeIP}
-          selectedOption={tailscaleExitNodeIPList.find((o) => o.label === tailscaleNodeIP)?.data || 0}
-          rgOptions={tailscaleExitNodeIPList.map((o) => ({
-            data: o.data,
-            label: o.label
-          }))}
-          />
+              bottomSeparator='none'
+              onMenuOpened={() => getExitNodeIPList()}
+              disabled={tailscaleExitNodeIPListDisabled}
+              menuLabel='Exit Node IP'
+              label='Exit Node IP'
+              description='Select an Exit Node IP, Note: this is currently NOT synced to changes made outside of the plugin, unlike tailscale toggle.'
+              onChange={setNodeIP}
+              selectedOption={tailscaleExitNodeIPList.find((o) => o.label === tailscaleNodeIP)?.data || 0}
+              rgOptions={tailscaleExitNodeIPList.map((o) => ({
+                data: o.data,
+                label: o.label
+              }))} />
           <ToggleField
-          bottomSeparator='standard'
-          checked={tailscaleExitNode}
-          label='Toggle Exit Node'
-          description='Enter a valid Exit Node IP before toggling Exit Node On or Off'
-          disabled={tailscaleExitNodeIPListDisabled}
-          onChange={toggleExitNode} />
-          <ToggleField
-          bottomSeparator='standard'
-          checked={tailscaleAllowLAN}
-          label='Toggle LAN Access'
-          description='WARNING: Disabling LAN access, may cause your SSH to become inaccessible (this can be reversed through Desktop Mode)'
-          disabled={tailscaleExitNode && !tailscaleExitNodeIPListDisabled ? false : true}
-          onChange={toggleLANAccess} />
-          <Field 
-          focusable={true}
-          bottomSeparator='none'
-          label="Device Status"/>
-          {deviceStatus}
+            bottomSeparator='standard'
+            checked={tailscaleAllowLAN}
+            label='Toggle LAN Access'
+            description='WARNING: Disabling LAN access, may cause your SSH to become inaccessible (this can be reversed through by re-enabling)'
+            disabled={tailscaleNodeIP === ''}
+            onChange={toggleLANAccess} />
+          <ButtonItem
+            layout="below"
+            onClick={popupMiscSetting}
+            bottomSeparator='standard'>
+            Advanced Settings
+          </ButtonItem>
+          <Field
+            bottomSeparator='none'
+            label={"Device Status"}/>
+          <Focusable
+            focusWithinClassName="gpfocuswithin"
+            onActivate={() => {}}
+            style={{
+              width: '100%',
+              alignContent: 'center',
+              justifyContent: 'center',
+              margin: 'auto',
+              padding: 'auto',
+            }}>
+              {deviceStatus}
+          </Focusable>
           <Field bottomSeparator='standard'/>
           <Field
-          focusable={true}
-          bottomSeparator='none'
-          label={"Tailscale Setup"}>
+            focusable={true}
+            bottomSeparator='none'
+            label={"Tailscale Setup"}>
             <SuspensefulImage
-            src={qr}
-            style={{ maxWidth: '85%', padding: '7.5%' }}/>
+              src={qr}
+              style={{ maxWidth: '85%', padding: '7.5%' }}/>
           </Field>
         </PanelSectionRow>
     </PanelSection>

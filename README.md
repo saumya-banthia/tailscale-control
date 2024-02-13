@@ -23,8 +23,10 @@ There are 2 main reasons:
 So its a win-win.
 
 ### Features Addons:
-- [Status Check](https://github.com/saumya-banthia/tailscale-control/pull/5)https://github.com/saumya-banthia/tailscale-control/pull/5
-- [Exit node Toggle](https://github.com/saumya-banthia/tailscale-control/issues/6)https://github.com/saumya-banthia/tailscale-control/issues/6
-- Support for alt-installation option Nix added - https://github.com/saumya-banthia/tailscale-control/pull/9
+- [Status Check](https://github.com/saumya-banthia/tailscale-control/pull/5)
+- [Exit node Toggle](https://github.com/saumya-banthia/tailscale-control/issues/6)
+- [Support for alt-installation option Nix added](https://github.com/saumya-banthia/tailscale-control/pull/9)
+- [QoL Improvements: Custom login server and up flags](https://github.com/saumya-banthia/tailscale-control/issues/11)
+- [Hostnames for Exit Nodes](https://github.com/saumya-banthia/tailscale-control/issues/14)
 
 ### Features To be added:
