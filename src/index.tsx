@@ -182,7 +182,7 @@ const Content: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
     // console.log(flags)
     // console.log(typeof(flags))
     // Ensure using regex --operator=\S+ that flags contains an operator that is not empty
-    togglerAndSetter(setTailscaleUpCustomFlags, LOCAL_STORAGE_KEY_TAILSCALE_UP_CUSTOM_FLAGS, flags.match(/--operator=\S+/) ? flags : DEFAULT_TAILSCALE_UP_CUSTOM_FLAGS);
+    togglerAndSetter(setTailscaleUpCustomFlags, LOCAL_STORAGE_KEY_TAILSCALE_UP_CUSTOM_FLAGS, flags.match(/--operator=\S+/) ? flags : DEFAULT_TAILSCALE_UP_CUSTOM_FLAGS+" "+flags.trim());
     // var custom_flags_getter = localStorage.getItem(LOCAL_STORAGE_KEY_TAILSCALE_UP_CUSTOM_FLAGS);
     // var custom_flags_var = custom_flags_getter? JSON.parse(custom_flags_getter).value : "NOT SET"
     // console.log("Custom Flags set to: "+ custom_flags_var);
@@ -256,7 +256,7 @@ const Content: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
               onChange={(Event) => set_login_server(Event.target.value)} />
             <TextField
               label="Tailscale Up Custom Flags"
-              description="Remember checking your --operator, which defaults to 'deck' for SteamOS. Leaving blank will reset to default i.e.: --operator=deck."
+              description="Remember checking your --operator, which defaults to 'deck' for SteamOS (this needs to be set). Leaving the flag blank or omitting will reset to default i.e.: --operator=deck."
               value={custom_flags} 
               onChange={(Event) => set_custom_flags(Event.target.value)} />
           </ConfirmModal>
