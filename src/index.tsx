@@ -24,6 +24,7 @@ import qr from "../assets/qr.svg"
 
 const LOCAL_STORAGE_KEY_TAILSCALE_TOGGLE = 'tailscaleToggle';
 const LOCAL_STORAGE_KEY_TAILSCALE_NODE_IP = 'tailscaleNodeIP';
+const LOCAL_STORAGE_KEY_TAILSCALE_MANUAL_NODE_IP = 'tailscaleManualNodeIP';
 const LOCAL_STORAGE_KEY_TAILSCALE_ALLOW_LAN = 'tailscaleAllowLAN';
 const LOCAL_STORAGE_KEY_TAILSCALE_EXIT_NODE_LIST = 'tailscaleExitNodeList';
 const LOCAL_STORAGE_KEY_TAILSCALE_LOGIN_SERVER = 'tailscaleLoginServer';
@@ -31,11 +32,16 @@ const LOCAL_STORAGE_KEY_TAILSCALE_UP_CUSTOM_FLAGS = 'tailscaleUpCustomFlags';
 const LOCAL_STORAGE_KEY_TAILSCALE_EXIT_NODE_LIST_DISABLED = 'tailscaleExitNodeListDisabled';
 const TAILSCALE_LOGIN_SERVER = "";
 const DEFAULT_TAILSCALE_UP_CUSTOM_FLAGS = "--operator=deck";
+const MANUAL_NODE_IP = "";
 
 const Content: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
 
   const [ tailscaleToggleState, setTailscaleToggleState ] = useState<boolean>(getInitialState(LOCAL_STORAGE_KEY_TAILSCALE_TOGGLE, false));
-  const [ tailscaleExitNodeIPList, setTailscaleExitNodeIPList ] = useState<DropdownOption[]>(getInitialState(LOCAL_STORAGE_KEY_TAILSCALE_EXIT_NODE_LIST, [{ data: 0, label: "Unset" }]));
+  const [ tailscaleManualNodeIP, setTailscaleManualNodeIP ] = useState<string>(getInitialState(LOCAL_STORAGE_KEY_TAILSCALE_MANUAL_NODE_IP, ''));
+  const [ tailscaleExitNodeIPList, setTailscaleExitNodeIPList ] = useState<DropdownOption[]>(getInitialState(LOCAL_STORAGE_KEY_TAILSCALE_EXIT_NODE_LIST, [
+    { data: 0, label: "Unset" },
+    { data: 1, label: tailscaleManualNodeIP + " (Manual)" }
+  ]));
   const [ tailscaleExitNodeIPListDisabled, setTailscaleExitNodeIPListDisabled ] = useState<boolean>(getInitialState(LOCAL_STORAGE_KEY_TAILSCALE_EXIT_NODE_LIST_DISABLED, true));
   const [ tailscaleNodeIP, setTailscaleNodeIP ] = useState<string>(getInitialState(LOCAL_STORAGE_KEY_TAILSCALE_NODE_IP, ''));
   const [ tailscaleLoginServer, setTailscaleLoginServer ] = useState<string>(getInitialState(LOCAL_STORAGE_KEY_TAILSCALE_LOGIN_SERVER, TAILSCALE_LOGIN_SERVER));
@@ -78,7 +84,12 @@ const Content: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
       var exitNodeIPList = data.result as string[];
       // console.log("Data Exit Node IP List: ");
       // console.log(exitNodeIPList);
-      var exitNodeIPListOptions: DropdownOption[] = [{ data: 0, label: "Unset" }];
+      var manual_node_ip_getter = localStorage.getItem(LOCAL_STORAGE_KEY_TAILSCALE_MANUAL_NODE_IP);
+      var manual_node_ip_var = manual_node_ip_getter? JSON.parse(manual_node_ip_getter).value : '';
+      var exitNodeIPListOptions: DropdownOption[] = [
+        { data: 0, label: "Unset" },
+        { data: 1, label: manual_node_ip_var + " (Manual)" }
+      ];
       // use map to populate the dropdown list
       exitNodeIPList.map((ip, _) => {
         if (exitNodeIPListOptions.find((o) => String(o.label) === String(ip)) || ip === null || String(ip) === '') {
@@ -101,7 +112,12 @@ const Content: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
     if (toggle === 'down') {
       const data = await serverAPI.callPluginMethod('down', {});
       if (data.success) {
-        var value: DropdownOption[] = [{ data: 0, label: "Unset" }];
+        var manual_node_ip_getter = localStorage.getItem(LOCAL_STORAGE_KEY_TAILSCALE_MANUAL_NODE_IP);
+        var manual_node_ip_var = manual_node_ip_getter? JSON.parse(manual_node_ip_getter).value : '';
+        var value: DropdownOption[] = [
+          { data: 0, label: "Unset" },
+          { data: 1, label: manual_node_ip_var + " (Manual)" }
+        ];
         togglerAndSetter(setTailscaleExitNodeIPList, LOCAL_STORAGE_KEY_TAILSCALE_EXIT_NODE_LIST, value);
         togglerAndSetter(setTailscaleNodeIP, LOCAL_STORAGE_KEY_TAILSCALE_NODE_IP, '');
         togglerAndSetter(setTailscaleExitNodeIPListDisabled, LOCAL_STORAGE_KEY_TAILSCALE_EXIT_NODE_LIST_DISABLED, true);
@@ -161,8 +177,8 @@ const Content: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
   }
 
   const setNodeIP = async(ip: DropdownOption) => {
-    togglerAndSetter(setTailscaleNodeIP, LOCAL_STORAGE_KEY_TAILSCALE_NODE_IP, ip.label==="Unset"? '' : ip.label);
-    tailscaleUp("Exit Node IP set to: "+ ip.label);
+    togglerAndSetter(setTailscaleNodeIP, LOCAL_STORAGE_KEY_TAILSCALE_NODE_IP, ip.label === "Unset" ? '' : ip.label);
+    tailscaleUp("Exit Node IP/Label set to: "+ ip.label);
   }
 
   const setLoginServer = async(url: string) => {
@@ -186,6 +202,10 @@ const Content: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
     // var custom_flags_getter = localStorage.getItem(LOCAL_STORAGE_KEY_TAILSCALE_UP_CUSTOM_FLAGS);
     // var custom_flags_var = custom_flags_getter? JSON.parse(custom_flags_getter).value : "NOT SET"
     // console.log("Custom Flags set to: "+ custom_flags_var);
+  }
+
+  const setManualNodeIP = async(ip: string) => {
+    togglerAndSetter(setTailscaleManualNodeIP, LOCAL_STORAGE_KEY_TAILSCALE_MANUAL_NODE_IP, ip.match(/^((25[0-5]|(2[0-4]|1\d|[1-9]|)\d)\.?\b){4}$/) ? ip : '');
   }
 
   const getTailscaleState = async () => {
@@ -231,11 +251,13 @@ const Content: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
     let Popup = () => {
       const [login_server, set_login_server] = useState<string>(tailscaleLoginServer);
       const [custom_flags, set_custom_flags] = useState<string>(tailscaleUpCustomFlags);
+      const [manual_node_ip, set_manual_node_ip] = useState<string>(tailscaleManualNodeIP);
 
-      return <ConfirmModal closeModal={closePopup} strTitle="Advanced Settings"  
+      return <ConfirmModal closeModal={closePopup} strTitle="Advanced Settings"
         onOK={() => {
           login_server ? setLoginServer(login_server) : setLoginServer(TAILSCALE_LOGIN_SERVER);
           custom_flags ? setCustomFlags(custom_flags) : setCustomFlags(DEFAULT_TAILSCALE_UP_CUSTOM_FLAGS);
+          manual_node_ip ? setManualNodeIP(manual_node_ip) : setManualNodeIP(MANUAL_NODE_IP);
           var tailscale_state_getter = localStorage.getItem(LOCAL_STORAGE_KEY_TAILSCALE_TOGGLE);
           // var ts_login_server_getter = localStorage.getItem(LOCAL_STORAGE_KEY_TAILSCALE_LOGIN_SERVER);
           // var ts_custom_flags_getter = localStorage.getItem(LOCAL_STORAGE_KEY_TAILSCALE_UP_CUSTOM_FLAGS);
@@ -244,7 +266,7 @@ const Content: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
           // var cf = ts_custom_flags_getter? JSON.parse(ts_custom_flags_getter).value : "UNSET CF";
           if (tailscale_state) {
             callPluginMethod('down');
-            tailscaleUp("Restarting with login server: "+ tailscaleLoginServer + " and custom flags: "+ tailscaleUpCustomFlags);
+            tailscaleUp("Restarting with login server: "+ tailscaleLoginServer + ", custom flags: "+ tailscaleUpCustomFlags + ", and manual node ip: "+ tailscaleManualNodeIP);
           }
         }}>
             <p style={{color: 'red', fontWeight: 'bold'}}>NOTE: Only change stuff here if you know what you are doing, otherwise it may result in a broken config.</p>
@@ -259,6 +281,11 @@ const Content: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
               description="Remember checking your --operator, which defaults to 'deck' for SteamOS (this needs to be set). Leaving the flag blank or omitting will reset to default i.e.: --operator=deck."
               value={custom_flags} 
               onChange={(Event) => set_custom_flags(Event.target.value)} />
+            <TextField
+              label="Tailscale Manual Node IP"
+              description="If you are using a manual node IP, please enter it here. Leaving blank is default behavior."
+              value={manual_node_ip}
+              onChange={(Event) => set_manual_node_ip(Event.target.value)} />
           </ConfirmModal>
     };
 
@@ -273,9 +300,14 @@ const Content: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
     var allow_lan_access_getter = localStorage.getItem(LOCAL_STORAGE_KEY_TAILSCALE_ALLOW_LAN);
     var exit_node_list_getter = localStorage.getItem(LOCAL_STORAGE_KEY_TAILSCALE_EXIT_NODE_LIST);
     var exit_node_list_disabled_getter = localStorage.getItem(LOCAL_STORAGE_KEY_TAILSCALE_EXIT_NODE_LIST_DISABLED);
+    var manual_node_ip_getter = localStorage.getItem(LOCAL_STORAGE_KEY_TAILSCALE_MANUAL_NODE_IP);
+    var manual_node_ip_var = manual_node_ip_getter? JSON.parse(manual_node_ip_getter).value : '';
     node_ip_getter? JSON.parse(node_ip_getter).value : false;
     allow_lan_access_getter? JSON.parse(allow_lan_access_getter).value : true;
-    exit_node_list_getter? JSON.parse(exit_node_list_getter).value : [{ data: 0, label: "Unset" }];
+    exit_node_list_getter? JSON.parse(exit_node_list_getter).value : [
+      { data: 0, label: "Unset" },
+      { data: 1, label: manual_node_ip_var + " (Manual)" }
+    ];
     exit_node_list_disabled_getter? JSON.parse(exit_node_list_disabled_getter).value : true;
     const interval = setInterval(() => {
       getTailscaleState();
@@ -312,7 +344,7 @@ const Content: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
             bottomSeparator='standard'
             checked={tailscaleAllowLAN}
             label='Toggle LAN Access'
-            description='WARNING: Disabling LAN access, may cause your SSH to become inaccessible (this can be reversed through by re-enabling)'
+            description='WARNING: Disabling LAN access, may cause your SSH to become inaccessible (this can be reversed by re-enabling)'
             disabled={tailscaleNodeIP === ''}
             onChange={toggleLANAccess} />
           <ButtonItem
