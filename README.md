@@ -28,5 +28,6 @@ So its a win-win.
 - [Support for alt-installation option Nix added](https://github.com/saumya-banthia/tailscale-control/pull/9)
 - [QoL Improvements: Custom login server and up flags](https://github.com/saumya-banthia/tailscale-control/issues/11)
 - [Hostnames for Exit Nodes](https://github.com/saumya-banthia/tailscale-control/issues/14)
+- [Custom Exit Node IP for Headscale Custom IP range Setup](https://github.com/saumya-banthia/tailscale-control/issues/20)
 
 ### Features To be added:
