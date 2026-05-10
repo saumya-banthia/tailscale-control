@@ -1,4 +1,4 @@
-import subprocess
+import asyncio
 import decky_plugin
 import os
 import re
@@ -54,7 +54,9 @@ class Plugin:
 
             logger.debug(f"Tailscale up with command: {' '.join(cmd_list)}")
 
-            return not subprocess.run(cmd_list, timeout=10, check=False)
+            proc = await asyncio.create_subprocess_exec(*cmd_list)
+            await asyncio.wait_for(proc.wait(), timeout=10)
+            return proc.returncode == 0
         except Exception as e:
             logger.error(e, "error")
 
@@ -66,7 +68,8 @@ class Plugin:
             bool: True if the Tailscale connection is successfully brought down, False otherwise.
         """
         try:
-            subprocess.run(["tailscale", "down"], timeout=10, check=False)
+            proc = await asyncio.create_subprocess_exec("tailscale", "down")
+            await asyncio.wait_for(proc.wait(), timeout=10)
             return True
         except Exception as e:
             logger.error(e, "error")
@@ -79,10 +82,13 @@ class Plugin:
             bool: True if the Tailscale connection is active, False otherwise.
         """
         try:
-            result = not subprocess.call(
-                ["tailscale", "status"], timeout=10, stdout=subprocess.DEVNULL
+            proc = await asyncio.create_subprocess_exec(
+                "tailscale", "status",
+                stdout=asyncio.subprocess.DEVNULL,
+                stderr=asyncio.subprocess.DEVNULL,
             )
-            return result
+            await asyncio.wait_for(proc.wait(), timeout=10)
+            return proc.returncode == 0
         except Exception as e:
             logger.error(e, "error")
 
@@ -94,9 +100,13 @@ class Plugin:
             str: The IP address of the exit node.
         """
         try:
-            output = subprocess.check_output(
-                ["tailscale", "status"], timeout=10, text=True
+            proc = await asyncio.create_subprocess_exec(
+                "tailscale", "status",
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.DEVNULL,
             )
+            stdout, _ = await asyncio.wait_for(proc.communicate(), timeout=10)
+            output = stdout.decode()
             lines = [elem for elem in output.splitlines() if len(elem) != 0]
             ip_pattern = r"\b(?:\d{1,3}\.){3}\d{1,3}\b"
             # over-engineered regex to avoid matching "exit node" in the middle of a line
@@ -117,9 +127,13 @@ class Plugin:
             dict: A dictionary containing the name and status of Tailscale devices.
         """
         try:
-            output = subprocess.check_output(
-                ["tailscale", "status"], timeout=10, text=True
+            proc = await asyncio.create_subprocess_exec(
+                "tailscale", "status",
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.DEVNULL,
             )
+            stdout, _ = await asyncio.wait_for(proc.communicate(), timeout=10)
+            output = stdout.decode()
             lines = [elem for elem in output.splitlines() if len(elem) != 0]
             output_dict = {
                 # "ip": [],
@@ -136,8 +150,6 @@ class Plugin:
                 output_dict["name"].append(parts[1])
                 # output_dict["type"].append(parts[3])
                 output_dict["status"].append(parts[4].replace(";", ""))
-            logger.debug(output)
-            logger.debug(output_dict)
             return output_dict
         except Exception as e:
             logger.error(e, "error")
