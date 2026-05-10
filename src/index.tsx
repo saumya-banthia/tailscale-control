@@ -309,12 +309,25 @@ const Content: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
       { data: 1, label: manual_node_ip_var + " (Manual)" }
     ];
     exit_node_list_disabled_getter? JSON.parse(exit_node_list_disabled_getter).value : true;
-    const interval = setInterval(() => {
-      getTailscaleState();
-      var tailscaleState = localStorage.getItem(LOCAL_STORAGE_KEY_TAILSCALE_TOGGLE);
-      var is_ts_up = tailscaleState? JSON.parse(tailscaleState).value : false;
-      is_ts_up ? (setTailscaleExitNodeIPListDisabled(false), getDeviceStatus()) : (setDeviceStatus(<div>Offline</div>), setTailscaleExitNodeIPListDisabled(true));
-    }, 1000);
+    let isPolling = false;
+    const interval = setInterval(async () => {
+      if (isPolling) return;
+      isPolling = true;
+      try {
+        await getTailscaleState();
+        var tailscaleState = localStorage.getItem(LOCAL_STORAGE_KEY_TAILSCALE_TOGGLE);
+        var is_ts_up = tailscaleState? JSON.parse(tailscaleState).value : false;
+        if (is_ts_up) {
+          setTailscaleExitNodeIPListDisabled(false);
+          await getDeviceStatus();
+        } else {
+          setDeviceStatus(<div>Offline</div>);
+          setTailscaleExitNodeIPListDisabled(true);
+        }
+      } finally {
+        isPolling = false;
+      }
+    }, 5000);
     return () => {clearInterval(interval); console.log('unmounted');}
   }, [serverAPI]);
   
